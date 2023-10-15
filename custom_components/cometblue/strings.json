@@ -1,0 +1,74 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "abort": {
+      "no_devices_found": "There aren't any Comet Blue Bluetooth TRVs nearby."
+    },
+    "step": {
+      "bluetooth_confirm": {
+        "description": "Do you want to add the Comet Blue TRV `{name}` to Home Assistant?",
+        "title": "Discovered Comet Blue TRV",
+        "data": {
+          "pin": "Please enter PIN",
+          "device_name": "Device name (Optional)"
+        }
+      }
+    }
+  },
+  "services": {
+    "set_datetime": {
+      "name": "Set Datetime",
+      "description": "Set datetime on device.",
+      "fields": {
+        "datetime": {
+          "name": "Datetime",
+          "description": "(Optional) A specific datetime. Defaults to current local datetime."
+        }
+      }
+    },
+    "get_schedule": {
+      "name": "Get Schedule",
+      "description": "Get schedule from device.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity",
+          "description": "CometBlue entity to retrieve the schedule from."
+        }
+      }
+    },
+    "set_schedule": {
+      "name": "Set Schedule",
+      "description": "Set schedule on device. A weekday not given will be ignored. Set to `delete: true` to delete a schedule for a day.",
+      "fields": {
+        "monday": {
+          "name": "[%key:common::time::monday%]",
+          "description": "Day schedule in 24h-format, from start1/end1 to start4/end. Not all pairs need to be set."
+        },
+        "tuesday": {
+          "name": "[%key:common::time::tuesday%]",
+          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
+        },
+        "wednesday": {
+          "name": "[%key:common::time::wednesday%]",
+          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
+        },
+        "thursday": {
+          "name": "[%key:common::time::thursday%]",
+          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
+        },
+        "friday": {
+          "name": "[%key:common::time::friday%]",
+          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
+        },
+        "saturday": {
+          "name": "[%key:common::time::saturday%]",
+          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
+        },
+        "sunday": {
+          "name": "[%key:common::time::sunday%]",
+          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
+        }
+      }
+    }
+  }
+}

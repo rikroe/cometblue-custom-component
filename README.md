@@ -17,10 +17,11 @@ This component aims to support as many of the TRV functions as possible, adding 
 
 Platform | Description
 -- | --
-`climate` | Climate entity with **target temperature**, **target temperature range** and **preset mode** support
-`number` | Number entities to adjust additional TRV settings
-`sensor` | Sensor entities for TRV state
-`service` | Services to interact with schedules and dates
+`climate` | Climate entity with **target temperature**, **target temperature range** and **preset mode** support. upported preset modes: `none` (manual mode), `eco` (low temperature), `away` (not implemented yet), `comfort` (high temperature)
+`number` | Number entities to adjust additional TRV settings: **offset**, **target temperature low**, **target temperature high**, **window open time in minutes**
+- **number** entites: 
+`sensor` | Sensor entities for TRV state: **battery*
+`service` | Services to interact with schedules and dates: **set_datetime**, **get_schedule**, **set_schedule**
 
 ## Installation (HACS)
 

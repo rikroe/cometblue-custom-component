@@ -10,10 +10,12 @@
   "codeowners": ["@rikroe"],
   "config_flow": true,
   "dependencies": ["bluetooth"],
-  "documentation": "https://www.home-assistant.io/integrations/cometblue",
+  "documentation": "https://github.com/rikroe/eurotronic-cometblue/",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/rikroe/eurotronic-cometblue/issues/",
   "loggers": ["cometblue"],
   "requirements": [
     "git+https://github.com/rikroe/eurotronic-cometblue.git@ha-component#eurotronic-cometblue==1.0"
-  ]
+  ],
+  "version": "20231015.1"
 }

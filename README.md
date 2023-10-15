@@ -23,6 +23,9 @@ Platform | Description
 `service` | Services to interact with schedules and dates
 
 ## Installation (HACS)
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rikroe&repository=cometblue-custom-component&category=integration)
+
 When using HACS, just add this repository as a [custom repostiory](https://hacs.xyz/docs/navigation/settings#custom-repositories) of category `Integration` with the url `https://github.com/rikroe/cometblue-custom-component`.
 
 ## Installation (manual)

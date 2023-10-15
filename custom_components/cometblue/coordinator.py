@@ -18,7 +18,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
-SCAN_INTERVAL = timedelta(minutes=1)
+SCAN_INTERVAL = timedelta(minutes=5)
 LOGGER = logging.getLogger(__name__)
 
 

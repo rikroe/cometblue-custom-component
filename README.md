@@ -1,7 +1,6 @@
 # Cometblue Custom Component
 
 [![GitHub Release][releases-shield]][releases]
-[![GitHub Activity][commits-shield]][commits]
 [![License][license-shield]](LICENSE)
 
 A custom component based on [zero-udo/eurotronic-cometblue](https://github.com/zero-udo/eurotronic-cometblue) to support Eurotronic's CometBlue thermostats (and similar).

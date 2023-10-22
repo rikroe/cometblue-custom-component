@@ -1,10 +1,12 @@
 """Comet Blue number integration."""
 from __future__ import annotations
 
-import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+import logging
 from typing import Any
+
+from cometblue import AsyncCometBlue
 
 from homeassistant.components.number import (
     NumberDeviceClass,
@@ -15,8 +17,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PRECISION_HALVES, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
-from cometblue import AsyncCometBlue
 
 from .climate import MAX_TEMP, MIN_TEMP
 from .const import DOMAIN

@@ -1,13 +1,14 @@
 """Comet Blue Bluetooth integration."""
 from __future__ import annotations
 
-import logging
 from datetime import datetime
+import logging
 from uuid import UUID
 
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 from bleak import BleakError
+import cometblue
+import voluptuous as vol
+
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_PIN, Platform
@@ -18,9 +19,8 @@ from homeassistant.core import (
     SupportsResponse,
 )
 from homeassistant.exceptions import ConfigEntryNotReady
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import DeviceInfo
-
-import cometblue
 
 from .const import CONF_ALL_DAYS, CONF_DEVICE_NAME, DOMAIN
 from .coordinator import CometBlueDataUpdateCoordinator
@@ -37,7 +37,7 @@ PLATFORMS: list[Platform] = [
     Platform.SENSOR,
 ]
 LOGGER = logging.getLogger(__name__)
-TIMEOUT = 10
+TIMEOUT = 20
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

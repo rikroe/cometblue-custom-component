@@ -1,13 +1,11 @@
 """Provides the DataUpdateCoordinator."""
 from __future__ import annotations
 
-from datetime import timedelta
 import logging
+from datetime import timedelta
 from typing import Any
 
 from bleak import BleakError
-from cometblue import AsyncCometBlue
-
 from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
@@ -17,6 +15,8 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
+
+from cometblue import AsyncCometBlue
 
 SCAN_INTERVAL = timedelta(minutes=5)
 LOGGER = logging.getLogger(__name__)
@@ -28,6 +28,8 @@ class DeviceUnavailable(HomeAssistantError):
 
 class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
     """Class to manage fetching data."""
+
+    failed_update_count: int = 0
 
     def __init__(
         self,
@@ -86,8 +88,10 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                     # "holiday": await self.device.get_holiday_async(),
                     **await self.device.get_temperature_async(),
                 }
+                self.failed_update_count = 0
         except Exception as ex:
-            raise UpdateFailed(f"Unable to update data for due to {ex}") from ex
+            self.failed_update_count += 1
+            raise UpdateFailed(f"({type(ex).__name__}) {ex}") from ex
         LOGGER.debug("Received data: %s", data)
         return data
 
@@ -107,11 +111,12 @@ class CometBlueBluetoothEntity(CoordinatorEntity[CometBlueDataUpdateCoordinator]
     def available(self) -> bool:
         """Return if entity is available."""
         return (
-            self.coordinator.last_update_success
+            # Comet Blue devices are rather fragile (especially via Bluetooth proxy)
+            # so we only set it to unavailable if the third update has failed
+            self.coordinator.failed_update_count < 3
             and bluetooth.async_address_present(
                 self.hass, self.coordinator.address, True
             )
-            and self._attr_available
         )
 
     async def async_added_to_hass(self) -> None:

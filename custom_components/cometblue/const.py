@@ -18,6 +18,7 @@ CONF_SUNDAY = "sunday"
 CONF_DELETE = "delete"
 CONF_START = "start"
 CONF_END = "end"
+CONF_TEMPERATURE = "temperature"
 
 CONF_ALL_DAYS = {
     CONF_MONDAY,

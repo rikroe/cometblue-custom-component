@@ -24,7 +24,7 @@
                     "name": "Entity"
                 }
             },
-            "name": "Get Schedule"
+            "name": "Get schedule"
         },
         "set_datetime": {
             "description": "Set datetime on device.",
@@ -34,7 +34,25 @@
                     "name": "Datetime"
                 }
             },
-            "name": "Set Datetime"
+            "name": "Set datetime"
+        },
+        "set_holiday": {
+            "description": "Set holiday/away mode on device.",
+            "fields": {
+                "end": {
+                    "description": "End of the away mode.",
+                    "name": "End"
+                },
+                "start": {
+                    "description": "Start of the away mode.",
+                    "name": "Start"
+                },
+                "temperature": {
+                    "description": "Temperature during away mode.",
+                    "name": "Temperature"
+                }
+            },
+            "name": "Set holiday (away mode)"
         },
         "set_schedule": {
             "description": "Set schedule on device. A weekday not given will be ignored. Set to `delete: true` to delete a schedule for a day.",
@@ -68,7 +86,7 @@
                     "name": "Wednesday"
                 }
             },
-            "name": "Set Schedule"
+            "name": "Set schedule"
         }
     }
 }

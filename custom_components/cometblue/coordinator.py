@@ -1,11 +1,13 @@
 """Provides the DataUpdateCoordinator."""
 from __future__ import annotations
 
-import logging
 from datetime import timedelta
+import logging
 from typing import Any
 
 from bleak import BleakError
+from cometblue import AsyncCometBlue
+
 from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
@@ -15,8 +17,6 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
-
-from cometblue import AsyncCometBlue
 
 SCAN_INTERVAL = timedelta(minutes=5)
 LOGGER = logging.getLogger(__name__)
@@ -84,8 +84,8 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                 data = {
                     "battery": await self.device.get_battery_async(),
                     # "schedule": await self.device.get_weekday_async(),
-                    "datetime": await self.device.get_datetime_async(),
-                    # "holiday": await self.device.get_holiday_async(),
+                    # "datetime": await self.device.get_datetime_async(),
+                    "holiday": await self.device.get_holiday_async(1),
                     **await self.device.get_temperature_async(),
                 }
                 self.failed_update_count = 0
@@ -111,8 +111,6 @@ class CometBlueBluetoothEntity(CoordinatorEntity[CometBlueDataUpdateCoordinator]
     def available(self) -> bool:
         """Return if entity is available."""
         return (
-            # Comet Blue devices are rather fragile (especially via Bluetooth proxy)
-            # so we only set it to unavailable if the third update has failed
             self.coordinator.failed_update_count < 3
             and bluetooth.async_address_present(
                 self.hass, self.coordinator.address, True

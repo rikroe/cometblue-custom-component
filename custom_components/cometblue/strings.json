@@ -17,7 +17,7 @@
   },
   "services": {
     "set_datetime": {
-      "name": "Set Datetime",
+      "name": "Set datetime",
       "description": "Set datetime on device.",
       "fields": {
         "datetime": {
@@ -27,7 +27,7 @@
       }
     },
     "get_schedule": {
-      "name": "Get Schedule",
+      "name": "Get schedule",
       "description": "Get schedule from device.",
       "fields": {
         "entity_id": {
@@ -37,7 +37,7 @@
       }
     },
     "set_schedule": {
-      "name": "Set Schedule",
+      "name": "Set schedule",
       "description": "Set schedule on device. A weekday not given will be ignored. Set to `delete: true` to delete a schedule for a day.",
       "fields": {
         "monday": {
@@ -67,6 +67,24 @@
         "sunday": {
           "name": "[%key:common::time::sunday%]",
           "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
+        }
+      }
+    },
+    "set_holiday": {
+      "name": "Set holiday (away mode)",
+      "description": "Set holiday/away mode on device.",
+      "fields": {
+        "start": {
+          "name": "Start",
+          "description": "Start of the away mode."
+        },
+        "end": {
+          "name": "End",
+          "description": "End of the away mode."
+        },
+        "temperature": {
+          "name": "Temperature",
+          "description": "Temperature during away mode."
         }
       }
     }

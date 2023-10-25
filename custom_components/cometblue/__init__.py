@@ -27,6 +27,7 @@ from .coordinator import CometBlueDataUpdateCoordinator
 from .utils import (
     SERVICE_DATETIME_SCHEMA,
     SERVICE_ENTITY_SCHEMA,
+    SERVICE_HOLIDAY_SCHEMA,
     SERVICE_SCHEDULE_SCHEMA,
     get_coordinator_for_service,
 )
@@ -88,7 +89,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    async def service_set_datetime(service_call: ServiceCall) -> None:
+    async def set_datetime(service_call: ServiceCall) -> None:
         """Service call to update the datetime on the device."""
 
         target_datetime = service_call.data.get("datetime") or datetime.now()
@@ -102,7 +103,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 service_call.service,
             )
 
-    async def service_get_schedule(
+    async def get_schedule(
         service_call: ServiceCall,
     ) -> ServiceResponse:
         """Service call to retrieve the schedule from the device."""
@@ -116,7 +117,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             service_call.service,
         )
 
-    async def service_set_schedule(service_call: ServiceCall) -> None:
+    async def set_schedule(service_call: ServiceCall) -> None:
         """Service call to update the schedule on the device."""
 
         data = service_call.data.copy()
@@ -145,25 +146,57 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 service_call.service,
             )
 
+    async def set_holiday(service_call: ServiceCall) -> None:
+        """Service call to update the holiday time on the device."""
+
+        data = service_call.data.copy()
+
+        for entity_id in data.pop("entity_id", []):
+            entity_coordinator = await get_coordinator_for_service(hass, entity_id)
+            LOGGER.info(
+                "Setting holiday for %s (%s)",
+                entity_id,
+                entity_coordinator.device.device.address,
+            )
+            await entity_coordinator.send_command(
+                "set_holiday_async",
+                {
+                    "number": 1,
+                    "values": {
+                        "start": data["start"],
+                        "end": data["end"],
+                        "temperature": data["temperature"],
+                    }
+                },
+                service_call.service,
+            )
+
     hass.services.async_register(
         DOMAIN,
         "set_datetime",
-        service_set_datetime,
+        set_datetime,
         schema=cv.make_entity_service_schema(SERVICE_DATETIME_SCHEMA),
         supports_response=SupportsResponse.NONE,
     )
     hass.services.async_register(
         DOMAIN,
         "get_schedule",
-        service_get_schedule,
+        get_schedule,
         schema=vol.Schema(SERVICE_ENTITY_SCHEMA),
         supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
         DOMAIN,
         "set_schedule",
-        service_set_schedule,
+        set_schedule,
         schema=cv.make_entity_service_schema(SERVICE_SCHEDULE_SCHEMA),
+        supports_response=SupportsResponse.NONE,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "set_holiday",
+        set_holiday,
+        schema=cv.make_entity_service_schema(SERVICE_HOLIDAY_SCHEMA),
         supports_response=SupportsResponse.NONE,
     )
 

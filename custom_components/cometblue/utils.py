@@ -10,18 +10,35 @@ from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_registry import EntityRegistry
 
+from .climate import MAX_TEMP, MIN_TEMP
 from .const import (
     CONF_ALL_DAYS,
     CONF_DATETIME,
     CONF_DELETE,
     CONF_END,
     CONF_START,
+    CONF_TEMPERATURE,
     DOMAIN,
 )
 from .coordinator import CometBlueDataUpdateCoordinator
 
 
-def valid_cometblue_schedule(schedule: dict[str, time]) -> dict[str, time] | None:
+def validate_half_precision(value: float) -> float:
+    """Return True if the value is a half precision float."""
+
+    try:
+        r = value % 0.5
+        if r != 0:
+            raise vol.Invalid(
+                f"value {value} is not a half precision float, remainder is {r}"
+            )
+        return value
+    except TypeError as err:
+        raise vol.Invalid(
+            f"value {value} is not a float"
+        ) from err
+
+def validate_cometblue_schedule(schedule: dict[str, time]) -> dict[str, time] | None:
     """Validate the schedule of time ranges.
 
     Ensure they have no overlap and the end time is greater than the start time.
@@ -86,10 +103,15 @@ SCHEDULE_DAY_SCHEMA = vol.All(
         vol.Optional(CONF_DELETE): cv.boolean,
         **{vol.Optional(item): cv.time for item in valid_cometblue_schedule_keys()},
     },
-    valid_cometblue_schedule,
+    validate_cometblue_schedule,
 )
 SERVICE_SCHEDULE_SCHEMA = {
     vol.Optional(day): SCHEDULE_DAY_SCHEMA for day in CONF_ALL_DAYS
+}
+SERVICE_HOLIDAY_SCHEMA = {
+    vol.Required(CONF_START): cv.datetime,
+    vol.Required(CONF_END): cv.datetime,
+    vol.Required(CONF_TEMPERATURE): vol.All(vol.Coerce(float), vol.Range(min=MIN_TEMP, max=MAX_TEMP), validate_half_precision)
 }
 
 

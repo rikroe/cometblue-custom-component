@@ -34,9 +34,8 @@ def validate_half_precision(value: float) -> float:
             )
         return value
     except TypeError as err:
-        raise vol.Invalid(
-            f"value {value} is not a float"
-        ) from err
+        raise vol.Invalid(f"value {value} is not a float") from err
+
 
 def validate_cometblue_schedule(schedule: dict[str, time]) -> dict[str, time] | None:
     """Validate the schedule of time ranges.
@@ -111,7 +110,11 @@ SERVICE_SCHEDULE_SCHEMA = {
 SERVICE_HOLIDAY_SCHEMA = {
     vol.Required(CONF_START): cv.datetime,
     vol.Required(CONF_END): cv.datetime,
-    vol.Required(CONF_TEMPERATURE): vol.All(vol.Coerce(float), vol.Range(min=MIN_TEMP, max=MAX_TEMP), validate_half_precision)
+    vol.Required(CONF_TEMPERATURE): vol.All(
+        vol.Coerce(float),
+        vol.Range(min=MIN_TEMP, max=MAX_TEMP),
+        validate_half_precision,
+    ),
 }
 
 

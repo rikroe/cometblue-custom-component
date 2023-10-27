@@ -17,5 +17,5 @@
   "requirements": [
     "git+https://github.com/rikroe/eurotronic-cometblue.git@ha-component#eurotronic-cometblue==1.0"
   ],
-  "version": "20231025.1"
+  "version": "20231028.1"
 }

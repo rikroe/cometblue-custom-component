@@ -97,7 +97,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
 
 
 class CometBlueBluetoothEntity(CoordinatorEntity[CometBlueDataUpdateCoordinator]):
-    """Coordinator entity for Gardena Bluetooth."""
+    """Coordinator entity for CometBlue."""
 
     coordinator: CometBlueDataUpdateCoordinator
     _attr_has_entity_name = True

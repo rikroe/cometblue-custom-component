@@ -10,8 +10,9 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components.bluetooth import async_discovered_service_info
 from homeassistant.components.bluetooth.models import BluetoothServiceInfoBleak
-from homeassistant.const import CONF_ADDRESS, CONF_PIN
+from homeassistant.const import CONF_ADDRESS, CONF_NAME, CONF_PIN
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.device_registry import format_mac
 
 from .const import CONF_DEVICE_NAME, DOMAIN
 
@@ -20,6 +21,8 @@ def name_from_discovery(discovery: BluetoothServiceInfoBleak | None) -> str:
     """Get the name from a discovery."""
     if discovery is None:
         raise ValueError("Discovery info not set")
+    if discovery.name == str(discovery.address):
+        return discovery.address
     return f"{discovery.name} {discovery.address}"
 
 
@@ -62,15 +65,19 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="bluetooth_confirm",
             description_placeholders={
-                "name": name_from_discovery(self._discovery_info),
-                "pin": "0",
+                CONF_NAME: name_from_discovery(self._discovery_info),
             },
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_PIN): vol.All(
-                        vol.Coerce(int), vol.Range(min=0, max=99999999)
-                    ),
-                    vol.Optional(CONF_DEVICE_NAME): str,
+                    vol.Required(
+                        CONF_PIN, description={"suggested_value": "0"}
+                    ): vol.All(vol.Coerce(int), vol.Range(min=0, max=99999999)),
+                    vol.Optional(
+                        CONF_DEVICE_NAME,
+                        description={
+                            "suggested_value": name_from_discovery(self._discovery_info)
+                        },
+                    ): str,
                 },
             ),
         )
@@ -82,7 +89,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._discovery_info = discovery_info
         self._discovery_info.address = discovery_info.address
 
-        await self.async_set_unique_id(discovery_info.address)
+        await self.async_set_unique_id(format_mac(discovery_info.address))
         self._abort_if_unique_id_configured(
             updates={CONF_ADDRESS: discovery_info.address}
         )

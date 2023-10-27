@@ -151,6 +151,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         data = service_call.data.copy()
 
+        if (
+            datetime(
+                data["start"].year,
+                data["start"].month,
+                data["start"].day,
+                data["start"].hour,
+            )
+            < datetime.now()
+        ):
+            raise ValueError("Start date (truncated to hour) must be in the future")
+
         for entity_id in data.pop("entity_id", []):
             entity_coordinator = await get_coordinator_for_service(hass, entity_id)
             LOGGER.info(
@@ -166,7 +177,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         "start": data["start"],
                         "end": data["end"],
                         "temperature": data["temperature"],
-                    }
+                    },
                 },
                 service_call.service,
             )

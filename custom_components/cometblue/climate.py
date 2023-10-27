@@ -13,6 +13,7 @@ from homeassistant.components.climate import (
     PRESET_NONE,
     ClimateEntity,
     ClimateEntityFeature,
+    HVACAction,
     HVACMode,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -25,8 +26,8 @@ from .coordinator import CometBlueBluetoothEntity, CometBlueDataUpdateCoordinato
 
 LOGGER = logging.getLogger(__name__)
 
-MIN_TEMP = 8
-MAX_TEMP = 28
+MIN_TEMP = 7.5
+MAX_TEMP = 28.5
 
 
 async def async_setup_entry(
@@ -43,28 +44,27 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
 
     _attr_min_temp = MIN_TEMP
     _attr_max_temp = MAX_TEMP
-    _attr_target_temperature_step = PRECISION_HALVES
     _attr_name = None
+    _attr_hvac_modes = [HVACMode.AUTO, HVACMode.HEAT, HVACMode.OFF]
+    _attr_preset_modes = [
+        PRESET_NONE,
+        PRESET_ECO,
+        PRESET_AWAY,
+        PRESET_COMFORT,
+    ]
+    _attr_supported_features: ClimateEntityFeature = (
+        ClimateEntityFeature.TARGET_TEMPERATURE
+        | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
+        | ClimateEntityFeature.PRESET_MODE
+    )
+    _attr_target_temperature_step = PRECISION_HALVES
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
 
     def __init__(self, coordinator: CometBlueDataUpdateCoordinator) -> None:
         """Initialize CometBlueClimateEntity."""
 
         super().__init__(coordinator)
         self._attr_unique_id = f"{coordinator.address}-climate"
-        self._attr_temperature_unit = UnitOfTemperature.CELSIUS
-        self._attr_hvac_modes = [HVACMode.AUTO]
-        self._attr_hvac_mode = HVACMode.AUTO
-        self._attr_supported_features: ClimateEntityFeature = (
-            ClimateEntityFeature.TARGET_TEMPERATURE
-            | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
-            | ClimateEntityFeature.PRESET_MODE
-        )
-        self._attr_preset_modes = [
-            PRESET_NONE,
-            PRESET_ECO,
-            PRESET_AWAY,
-            PRESET_COMFORT,
-        ]
 
     @property
     def current_temperature(self) -> float | None:
@@ -74,7 +74,11 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
     @property
     def target_temperature(self) -> float | None:
         """Return the temperature currently set to be reached."""
-        return self.coordinator.data["manualTemp"]
+        # if holiday mode is active (i.e. temperature is available), return holiday temperature
+        return (
+            self.coordinator.data["holiday"].get("temperature")
+            or self.coordinator.data["manualTemp"]
+        )
 
     @property
     def target_temperature_high(self) -> float | None:
@@ -87,20 +91,52 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
         return self.coordinator.data["targetTempLow"]
 
     @property
-    def preset_mode(self) -> str | None:
-        """Return the current preset mode, e.g., home, away, temp.
+    def hvac_mode(self) -> HVACMode | None:
+        """Return hvac operation mode."""
+        if self.coordinator.data["manualTemp"] == 7.5:
+            return HVACMode.OFF
+        if self.coordinator.data["manualTemp"] == 28.5:
+            return HVACMode.HEAT
+        return HVACMode.AUTO
 
-        Requires ClimateEntityFeature.PRESET_MODE.
-        """
-        if self.target_temperature == self.target_temperature_low:
-            return PRESET_ECO
+    @property
+    def hvac_action(self) -> HVACAction | None:
+        """Return the current running hvac action if supported."""
+
+        if self.coordinator.data["manualTemp"] == 7.5:
+            return HVACAction.OFF
+        if (
+            self.coordinator.data["currentTemp"] + 0.5
+            < self.coordinator.data["manualTemp"]
+        ):
+            return HVACAction.HEATING
+        return HVACAction.IDLE
+
+    @property
+    def preset_mode(self) -> str | None:
+        """Return the current preset mode, e.g., home, away, temp."""
+        # presets have an order in which they are displayed on TRV:
+        # away, comfort, eco, none (or manual)
+        if (
+            self.coordinator.data["holiday"].get("start") is None
+            and self.coordinator.data["holiday"].get("end") is not None
+        ):
+            return PRESET_AWAY
         if self.target_temperature == self.target_temperature_high:
             return PRESET_COMFORT
-        # AWAY MODE NOT SUPPORTED YET
+        if self.target_temperature == self.target_temperature_low:
+            return PRESET_ECO
         return PRESET_NONE
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperatures."""
+
+        # Not sure if actually the case. Maybe set vacation mode to really hot and check
+        # what happens when changing it manually
+        if self.preset_mode == PRESET_AWAY:
+            raise ValueError(
+                "Cannot adjust TRV remotely, manually disable 'away' mode on TRV first"
+            )
 
         await self.coordinator.send_command(
             "set_temperature_async",
@@ -125,6 +161,22 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
         if preset_mode in [PRESET_NONE, PRESET_AWAY]:
             raise ValueError(f"Setting preset '{preset_mode}' is not supported.")
         if preset_mode == PRESET_ECO:
-            await self.async_set_temperature(temperature=self.target_temperature_low)
-        elif preset_mode == PRESET_COMFORT:
-            await self.async_set_temperature(temperature=self.target_temperature_high)
+            return await self.async_set_temperature(
+                temperature=self.target_temperature_low
+            )
+        if preset_mode == PRESET_COMFORT:
+            return await self.async_set_temperature(
+                temperature=self.target_temperature_high
+            )
+
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+        """Set new target hvac mode."""
+
+        if hvac_mode == HVACMode.OFF:
+            return await self.async_set_temperature(temperature=7.5)
+        if hvac_mode == HVACMode.HEAT:
+            return await self.async_set_temperature(temperature=28.5)
+        if hvac_mode == HVACMode.AUTO:
+            return await self.async_set_temperature(
+                temperature=self.target_temperature_low
+            )

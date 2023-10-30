@@ -74,11 +74,7 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
     @property
     def target_temperature(self) -> float | None:
         """Return the temperature currently set to be reached."""
-        # if holiday mode is active (i.e. temperature is available), return holiday temperature
-        return (
-            self.coordinator.data["holiday"].get("temperature")
-            or self.coordinator.data["manualTemp"]
-        )
+        return self.coordinator.data["manualTemp"]
 
     @property
     def target_temperature_high(self) -> float | None:
@@ -105,10 +101,7 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
 
         if self.coordinator.data["manualTemp"] == 7.5:
             return HVACAction.OFF
-        if (
-            self.coordinator.data["currentTemp"] + 0.5
-            < self.coordinator.data["manualTemp"]
-        ):
+        if (self.target_temperature or 0.0) > (self.target_temperature_low or 0.0):
             return HVACAction.HEATING
         return HVACAction.IDLE
 
@@ -116,10 +109,12 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
     def preset_mode(self) -> str | None:
         """Return the current preset mode, e.g., home, away, temp."""
         # presets have an order in which they are displayed on TRV:
-        # away, comfort, eco, none (or manual)
+        # away, comfort, eco, none (manual)
         if (
             self.coordinator.data["holiday"].get("start") is None
             and self.coordinator.data["holiday"].get("end") is not None
+            and self.coordinator.data["manualTemp"]
+            == self.coordinator.data["holiday"].get("temperature")
         ):
             return PRESET_AWAY
         if self.target_temperature == self.target_temperature_high:
@@ -131,11 +126,9 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperatures."""
 
-        # Not sure if actually the case. Maybe set vacation mode to really hot and check
-        # what happens when changing it manually
         if self.preset_mode == PRESET_AWAY:
             raise ValueError(
-                "Cannot adjust TRV remotely, manually disable 'away' mode on TRV first"
+                "Cannot adjust TRV remotely, manually disable 'holiday' mode on TRV first"
             )
 
         await self.coordinator.send_command(
@@ -159,7 +152,7 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
         if self.preset_modes and preset_mode not in self.preset_modes:
             raise ValueError(f"Unsupported preset_mode '{preset_mode}'")
         if preset_mode in [PRESET_NONE, PRESET_AWAY]:
-            raise ValueError(f"Setting preset '{preset_mode}' is not supported.")
+            raise ValueError(f"Unable to set preset '{preset_mode}', display only.")
         if preset_mode == PRESET_ECO:
             return await self.async_set_temperature(
                 temperature=self.target_temperature_low
@@ -180,3 +173,4 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
             return await self.async_set_temperature(
                 temperature=self.target_temperature_low
             )
+        raise ValueError(f"Unknown HVAC mode '{hvac_mode}'")

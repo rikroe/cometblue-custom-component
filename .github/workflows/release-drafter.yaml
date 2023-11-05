@@ -61,6 +61,6 @@ jobs:
           tag: ${{ steps.calver.outputs.version }}
           name: ${{ steps.calver.outputs.version }}
           version: ${{ steps.calver.outputs.version }}
-          footer: ${{ steps.calver.outputs.changes }}
+          changes: ${{ steps.calver.outputs.changes }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -31,3 +31,13 @@ CONF_ALL_DAYS: Final = {
     CONF_SATURDAY,
     CONF_SUNDAY,
 }
+
+CONF_ALL_TEMPERATURES: Final = {
+    "currentTemp",
+    "manualTemp",
+    "targetTempLow",
+    "targetTempHigh",
+    "tempOffset",
+    "windowOpen",
+    "windowOpenMinutes",
+}

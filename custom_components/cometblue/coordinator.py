@@ -18,6 +18,8 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
+from .const import CONF_ALL_TEMPERATURES
+
 SCAN_INTERVAL = timedelta(minutes=5)
 LOGGER = logging.getLogger(__name__)
 
@@ -81,14 +83,22 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                     raise ConfigEntryNotReady(
                         f"Failed to connect to '{self.device.device.address}'"
                     )
+                retrieved_temperatures = await self.device.get_temperature_async()
                 data = {
                     "battery": await self.device.get_battery_async(),
-                    # "schedule": await self.device.get_weekday_async(),
-                    # "datetime": await self.device.get_datetime_async(),
                     "holiday": await self.device.get_holiday_async(1),
-                    **await self.device.get_temperature_async(),
+                    # If one value was not retrieved correctly, keep the old value
+                    **{
+                        k: retrieved_temperatures.get(k) or self.data[k]
+                        for k
+                        in CONF_ALL_TEMPERATURES
+                    },
                 }
-                self.failed_update_count = 0
+                # Increase failure counter if not all values were retrieved
+                if CONF_ALL_TEMPERATURES == set(retrieved_temperatures):
+                    self.failed_update_count = 0
+                else:
+                    self.failed_update_count = 1
         except Exception as ex:
             self.failed_update_count += 1
             raise UpdateFailed(f"({type(ex).__name__}) {ex}") from ex

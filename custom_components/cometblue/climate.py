@@ -176,3 +176,11 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
                 temperature=self.target_temperature_low
             )
         raise ValueError(f"Unknown HVAC mode '{hvac_mode}'")
+    
+    async def async_turn_on(self):
+        """Turn the entity on."""
+        await self.async_set_hvac_mode(HVACMode.AUTO)
+
+    async def async_turn_off(self):
+        """Turn the entity off."""
+        await self.async_set_hvac_mode(HVACMode.OFF)

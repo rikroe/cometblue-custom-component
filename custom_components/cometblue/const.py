@@ -1,26 +1,28 @@
 """Constants for Cometblue BLE thermostats."""
 
-DOMAIN = "cometblue"
-DEFAULT_NAME = "Eurotronic CometBlue"
+from typing import Final
 
-CONF_DEVICE_NAME = "device_name"
-CONF_DATETIME = "datetime"
-CONF_SCHEDULE = "schedule"
+DOMAIN: Final = "cometblue"
+DEFAULT_NAME: Final = "Eurotronic CometBlue"
+
+CONF_DEVICE_NAME: Final = "device_name"
+CONF_DATETIME: Final = "datetime"
+CONF_SCHEDULE: Final = "schedule"
 
 
-CONF_MONDAY = "monday"
-CONF_TUESDAY = "tuesday"
-CONF_WEDNESDAY = "wednesday"
-CONF_THURSDAY = "thursday"
-CONF_FRIDAY = "friday"
-CONF_SATURDAY = "saturday"
-CONF_SUNDAY = "sunday"
-CONF_DELETE = "delete"
-CONF_START = "start"
-CONF_END = "end"
-CONF_TEMPERATURE = "temperature"
+CONF_MONDAY: Final = "monday"
+CONF_TUESDAY: Final = "tuesday"
+CONF_WEDNESDAY: Final = "wednesday"
+CONF_THURSDAY: Final = "thursday"
+CONF_FRIDAY: Final = "friday"
+CONF_SATURDAY: Final = "saturday"
+CONF_SUNDAY: Final = "sunday"
+CONF_DELETE: Final = "delete"
+CONF_START: Final = "start"
+CONF_END: Final = "end"
+CONF_TEMPERATURE: Final = "temperature"
 
-CONF_ALL_DAYS = {
+CONF_ALL_DAYS: Final = {
     CONF_MONDAY,
     CONF_TUESDAY,
     CONF_WEDNESDAY,

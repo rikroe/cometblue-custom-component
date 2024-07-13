@@ -5,7 +5,6 @@ set_datetime:
       integration: cometblue
   fields:
     datetime:
-      # example: /opt/images/logo.png
       selector:
         datetime:
 

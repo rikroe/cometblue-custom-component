@@ -89,7 +89,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                     "holiday": await self.device.get_holiday_async(1),
                     # If one value was not retrieved correctly, keep the old value
                     **{
-                        k: retrieved_temperatures.get(k) or self.data[k]
+                        k: retrieved_temperatures.get(k) or self.data.get(k)
                         for k
                         in CONF_ALL_TEMPERATURES
                     },

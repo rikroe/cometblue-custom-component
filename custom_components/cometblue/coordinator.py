@@ -6,11 +6,11 @@ import logging
 from typing import Any
 
 from bleak import BleakError
-from cometblue import AsyncCometBlue
+from cometblue import AsyncCometBlue, InvalidByteValueError
 
 from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
+from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -65,7 +65,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                     )
                 return await getattr(self.device, function)(**payload)
         except ValueError as err:
-            raise HomeAssistantError(
+            raise ServiceValidationError(
                 f"Invalid payload '{payload}' for '{caller_entity_id}': {err}"
             ) from err
         except BleakError as err:
@@ -94,11 +94,14 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                         in CONF_ALL_TEMPERATURES
                     },
                 }
-                # Increase failure counter if not all values were retrieved
-                if CONF_ALL_TEMPERATURES == set(retrieved_temperatures):
-                    self.failed_update_count = 0
-                else:
-                    self.failed_update_count = 1
+                # Reset failed update count if all values were retrieved correctly
+                self.failed_update_count = 0
+        except InvalidByteValueError as ex:
+            self.failed_update_count += 1
+            # allow invalid bytes once, but fail on the second invalid byte
+            if self.failed_update_count < 1:
+                return self.data
+            raise UpdateFailed(f"Invalid byte value: {ex}") from ex
         except Exception as ex:
             self.failed_update_count += 1
             raise UpdateFailed(f"({type(ex).__name__}) {ex}") from ex

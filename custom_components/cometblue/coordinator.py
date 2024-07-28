@@ -21,6 +21,7 @@ from homeassistant.helpers.update_coordinator import (
 from .const import CONF_ALL_TEMPERATURES
 
 SCAN_INTERVAL = timedelta(minutes=5)
+RETRY_COUNT = 3
 LOGGER = logging.getLogger(__name__)
 
 
@@ -97,11 +98,11 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                 # Reset failed update count if all values were retrieved correctly
                 self.failed_update_count = 0
         except InvalidByteValueError as ex:
-            self.failed_update_count += 1
-            # allow invalid bytes once, but fail on the second invalid byte
-            if self.failed_update_count < 1:
+            # allow invalid bytes until RETRY_COUNT is reached
+            if self.failed_update_count < RETRY_COUNT and self.data:
+                self.failed_update_count += 1
                 return self.data
-            raise UpdateFailed(f"Invalid byte value: {ex}") from ex
+            raise UpdateFailed(f"Error in device response: {ex}") from ex
         except Exception as ex:
             self.failed_update_count += 1
             raise UpdateFailed(f"({type(ex).__name__}) {ex}") from ex
@@ -124,7 +125,7 @@ class CometBlueBluetoothEntity(CoordinatorEntity[CometBlueDataUpdateCoordinator]
     def available(self) -> bool:
         """Return if entity is available."""
         return (
-            self.coordinator.failed_update_count < 3
+            self.coordinator.failed_update_count < RETRY_COUNT
             and bluetooth.async_address_present(
                 self.hass, self.coordinator.address, True
             )

@@ -26,7 +26,7 @@ Platform | Description
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rikroe&repository=cometblue-custom-component&category=integration)
 
-When using HACS, just add this repository as a [custom repostiory](https://hacs.xyz/docs/navigation/settings#custom-repositories) of category `Integration` with the url `https://github.com/rikroe/cometblue-custom-component`.
+When using HACS, just add this repository as a [custom repostiory](https://hacs.xyz/docs/faq/custom_repositories) of category `Integration` with the url `https://github.com/rikroe/cometblue-custom-component`.
 
 ## Installation (manual)
 
@@ -39,10 +39,6 @@ When using HACS, just add this repository as a [custom repostiory](https://hacs.
 1. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Integration blueprint"
 
 ## Configuration is done in the UI
-
-<!---->
-
-***
 
 [license-shield]: https://img.shields.io/github/license/rikroe/cometblue-custom-component.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/rikroe/cometblue-custom-component.svg?style=for-the-badge

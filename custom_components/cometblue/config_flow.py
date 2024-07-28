@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
-from cometblue.const import SERVICE
 import voluptuous as vol
 
+from cometblue.const import SERVICE
 from homeassistant import config_entries
 from homeassistant.components.bluetooth import async_discovered_service_info
 from homeassistant.components.bluetooth.models import BluetoothServiceInfoBleak
@@ -37,7 +37,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._discovered_device: str | None = None
         self._discovered_devices: list[str] = []
 
-    def _create_entry(self, pin: int, device_name: Optional[str] = None) -> FlowResult:
+    def _create_entry(self, pin: int, device_name: str | None = None) -> FlowResult:
         """Create an entry for a discovered device."""
 
         if self._discovery_info is None or self._discovery_info.address is None:

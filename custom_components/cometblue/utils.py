@@ -32,10 +32,9 @@ def validate_half_precision(value: float) -> float:
             raise vol.Invalid(
                 f"value {value} is not a half precision float, remainder is {r}"
             )
-        return value
     except TypeError as err:
         raise vol.Invalid(f"value {value} is not a float") from err
-
+    return value
 
 def validate_cometblue_schedule(schedule: dict[str, time]) -> dict[str, time] | None:
     """Validate the schedule of time ranges.

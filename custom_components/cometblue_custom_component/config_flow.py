@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from cometblue.const import SERVICE
 import voluptuous as vol
 
-from cometblue.const import SERVICE
 from homeassistant import config_entries
 from homeassistant.components.bluetooth import async_discovered_service_info
 from homeassistant.components.bluetooth.models import BluetoothServiceInfoBleak

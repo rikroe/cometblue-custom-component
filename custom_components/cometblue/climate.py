@@ -127,6 +127,14 @@ class CometBlueClimateEntity(CometBlueBluetoothEntity, ClimateEntity):
             return PRESET_ECO
         return PRESET_NONE
 
+    @property
+    def preset_modes(self) -> list[str] | None:
+        """Return a list of available preset modes.
+
+        Will only show presets that are supported by the device.
+        """
+        return list({PRESET_COMFORT, PRESET_ECO, self.preset_mode})
+
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperatures."""
 

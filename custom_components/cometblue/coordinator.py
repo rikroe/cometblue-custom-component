@@ -68,12 +68,17 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                     raise ConfigEntryNotReady(
                         f"Failed to connect to '{self.device.device.address}'"
                     )
-                return await getattr(self.device, function)(**payload)
+                retry_count = 0
+                while retry_count < RETRY_COUNT:
+                    try:
+                        return await getattr(self.device, function)(**payload)
+                    except (InvalidByteValueError, TimeoutError):  # noqa: PERF203
+                        retry_count += 1
         except ValueError as err:
             raise ServiceValidationError(
                 f"Invalid payload '{payload}' for '{caller_entity_id}': {err}"
             ) from err
-        except BleakError as err:
+        except (BleakError, TimeoutError) as err:
             raise HomeAssistantError(
                 f"Error sending command '{payload}' to '{caller_entity_id}': {err}"
             ) from err
@@ -101,7 +106,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                 }
                 # Reset failed update count if all values were retrieved correctly
                 self.failed_update_count = 0
-        except InvalidByteValueError as ex:
+        except (InvalidByteValueError, TimeoutError) as ex:
             # allow invalid bytes until RETRY_COUNT is reached
             if self.failed_update_count < RETRY_COUNT and self.data:
                 self.failed_update_count += 1

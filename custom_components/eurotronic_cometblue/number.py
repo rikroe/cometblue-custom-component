@@ -1,4 +1,5 @@
 """Comet Blue number integration."""
+
 from __future__ import annotations
 
 from collections.abc import Callable

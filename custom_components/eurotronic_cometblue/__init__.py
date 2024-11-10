@@ -1,4 +1,5 @@
 """Comet Blue Bluetooth integration."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -39,6 +40,7 @@ PLATFORMS: list[Platform] = [
 ]
 LOGGER = logging.getLogger(__name__)
 TIMEOUT = 20
+CONNECT_RETRIES = 3
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -54,7 +56,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
 
     cometblue_device = cometblue.AsyncCometBlue(
-        device=ble_device, pin=entry.data.get(CONF_PIN), timeout=TIMEOUT, retries=1
+        device=ble_device,
+        pin=entry.data.get(CONF_PIN),
+        timeout=TIMEOUT,
+        retries=CONNECT_RETRIES,
     )
     try:
         async with cometblue_device:

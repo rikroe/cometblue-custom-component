@@ -1,4 +1,5 @@
 """Provides the DataUpdateCoordinator."""
+
 from __future__ import annotations
 
 from datetime import timedelta
@@ -72,8 +73,15 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                 while retry_count < RETRY_COUNT:
                     try:
                         return await getattr(self.device, function)(**payload)
-                    except (InvalidByteValueError, TimeoutError):  # noqa: PERF203
+                    except (InvalidByteValueError, TimeoutError) as ex:  # noqa: PERF203
                         retry_count += 1
+                        LOGGER.info(
+                            "Retrying command '%s' to '%s' after %s (%s)",
+                            payload,
+                            caller_entity_id,
+                            type(ex).__name__,
+                            ex,
+                        )
         except ValueError as err:
             raise ServiceValidationError(
                 f"Invalid payload '{payload}' for '{caller_entity_id}': {err}"
@@ -100,8 +108,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                     # If one value was not retrieved correctly, keep the old value
                     **{
                         k: retrieved_temperatures.get(k) or self.data.get(k)
-                        for k
-                        in CONF_ALL_TEMPERATURES
+                        for k in CONF_ALL_TEMPERATURES
                     },
                 }
                 # Reset failed update count if all values were retrieved correctly
@@ -110,6 +117,12 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
             # allow invalid bytes until RETRY_COUNT is reached
             if self.failed_update_count < RETRY_COUNT and self.data:
                 self.failed_update_count += 1
+                LOGGER.info(
+                    "Returning old data for '%s' after %s (%s)",
+                    self.device.device.address,
+                    type(ex).__name__,
+                    ex,
+                )
                 return self.data
             raise UpdateFailed(f"Error in device response: {ex}") from ex
         except Exception as ex:

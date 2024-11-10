@@ -2,7 +2,7 @@ set_datetime:
   target:
     entity:
       domain: climate
-      integration: cometblue
+      integration: eurotronic_cometblue
   fields:
     datetime:
       selector:
@@ -16,13 +16,13 @@ get_schedule:
         entity:
           filter:
             - domain: climate
-              integration: cometblue
+              integration: eurotronic_cometblue
 
 set_schedule:
   target:
     entity:
       domain: climate
-      integration: cometblue
+      integration: eurotronic_cometblue
   fields:
     monday:
       example: |
@@ -93,7 +93,7 @@ set_holiday:
   target:
     entity:
       domain: climate
-      integration: cometblue
+      integration: eurotronic_cometblue
   fields:
     start:
       example: 2023-12-24

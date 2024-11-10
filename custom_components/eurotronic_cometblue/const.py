@@ -2,7 +2,7 @@
 
 from typing import Final
 
-DOMAIN: Final = "cometblue"
+DOMAIN: Final = "eurotronic_cometblue"
 DEFAULT_NAME: Final = "Eurotronic CometBlue"
 
 CONF_DEVICE_NAME: Final = "device_name"

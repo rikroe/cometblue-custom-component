@@ -63,71 +63,82 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
         """Send command to device."""
 
         LOGGER.debug("Updating device with '%s' from '%s'", caller_entity_id, payload)
-        try:
-            async with self.device:
-                if not self.device.connected:
-                    raise ConfigEntryNotReady(
-                        f"Failed to connect to '{self.device.device.address}'"
-                    )
-                retry_count = 0
-                while retry_count < RETRY_COUNT:
-                    try:
-                        return await getattr(self.device, function)(**payload)
-                    except (InvalidByteValueError, TimeoutError) as ex:  # noqa: PERF203
-                        retry_count += 1
-                        LOGGER.info(
-                            "Retrying command '%s' to '%s' after %s (%s)",
-                            payload,
-                            caller_entity_id,
-                            type(ex).__name__,
-                            ex,
+        retry_count = 0
+        while retry_count < RETRY_COUNT:
+            try:
+                async with self.device:
+                    if not self.device.connected:
+                        raise ConfigEntryNotReady(
+                            f"Failed to connect to '{self.device.device.address}'"
                         )
-        except ValueError as err:
-            raise ServiceValidationError(
-                f"Invalid payload '{payload}' for '{caller_entity_id}': {err}"
-            ) from err
-        except (BleakError, TimeoutError) as err:
-            raise HomeAssistantError(
-                f"Error sending command '{payload}' to '{caller_entity_id}': {err}"
-            ) from err
+                    return await getattr(self.device, function)(**payload)
+            except (InvalidByteValueError, TimeoutError, BleakError) as ex:  # noqa: PERF203
+                retry_count += 1
+                if retry_count >= RETRY_COUNT:
+                    raise HomeAssistantError(
+                        f"Error sending command '{payload}' to '{caller_entity_id}': {ex}"
+                    ) from ex
+                LOGGER.info(
+                    "Retrying command '%s' to '%s' after %s (%s)",
+                    payload,
+                    caller_entity_id,
+                    type(ex).__name__,
+                    ex,
+                )
+            except ValueError as ex:
+                raise ServiceValidationError(
+                    f"Invalid payload '{payload}' for '{caller_entity_id}': {ex}"
+                ) from ex
 
     async def _async_update_data(self) -> dict[str, bytes]:
         """Poll the device."""
         data: dict = {}
 
-        try:
-            async with self.device:
-                if not self.device.connected:
-                    raise ConfigEntryNotReady(
-                        f"Failed to connect to '{self.device.device.address}'"
-                    )
-                retrieved_temperatures = await self.device.get_temperature_async()
-                data = {
-                    "battery": await self.device.get_battery_async(),
-                    "holiday": await self.device.get_holiday_async(1),
-                    # If one value was not retrieved correctly, keep the old value
-                    **{
-                        k: retrieved_temperatures.get(k) or self.data.get(k)
-                        for k in CONF_ALL_TEMPERATURES
-                    },
-                }
-                # Reset failed update count if all values were retrieved correctly
-                self.failed_update_count = 0
-        except (InvalidByteValueError, TimeoutError) as ex:
-            # allow invalid bytes until RETRY_COUNT is reached
-            if self.failed_update_count < RETRY_COUNT and self.data:
-                self.failed_update_count += 1
+        retry_count = 0
+        retrieved_temperatures = {}
+        battery = 0
+        holiday = {}
+
+        while retry_count < RETRY_COUNT:
+            try:
+                async with self.device:
+                    if not self.device.connected:
+                        raise ConfigEntryNotReady(
+                            f"Failed to connect to '{self.device.device.address}'"
+                        )
+                    # temperatures are required and must trigger a retry if not available
+                    retrieved_temperatures = await self.device.get_temperature_async()
+                    # battery and holiday are optional and should not trigger a retry
+                    try:
+                        battery = await self.device.get_battery_async()
+                        holiday = await self.device.get_holiday_async(1)
+                    except InvalidByteValueError as ex:
+                        LOGGER.warning(
+                            "Failed to retrieve optional data: %s (%s)",
+                            type(ex).__name__,
+                            ex,
+                        )
+            except (InvalidByteValueError, TimeoutError, BleakError) as ex:  # noqa: PERF203
+                retry_count += 1
+                if retry_count >= RETRY_COUNT:
+                    raise UpdateFailed(f"Error retrieving data: {ex}") from ex
                 LOGGER.info(
-                    "Returning old data for '%s' after %s (%s)",
-                    self.device.device.address,
+                    "Retrying after %s (%s)",
                     type(ex).__name__,
                     ex,
                 )
-                return self.data
-            raise UpdateFailed(f"Error in device response: {ex}") from ex
-        except Exception as ex:
-            self.failed_update_count += 1
-            raise UpdateFailed(f"({type(ex).__name__}) {ex}") from ex
+            except Exception as ex:
+                raise UpdateFailed(f"({type(ex).__name__}) {ex}") from ex
+
+        # If one value was not retrieved correctly, keep the old value
+        data = {
+            "battery": battery or self.data.get("battery"),
+            "holiday": holiday or self.data.get("holiday"),
+            **{
+                k: retrieved_temperatures.get(k) or self.data.get(k)
+                for k in CONF_ALL_TEMPERATURES
+            },
+        }
         LOGGER.debug("Received data: %s", data)
         return data
 

@@ -89,17 +89,23 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                 raise ServiceValidationError(
                     f"Invalid payload '{payload}' for '{caller_entity_id}': {ex}"
                 ) from ex
+        return None
 
     async def _async_update_data(self) -> dict[str, bytes]:
         """Poll the device."""
         data: dict = {}
 
         retry_count = 0
-        retrieved_temperatures = {}
-        battery = 0
-        holiday = {}
+        retrieved_temperatures: dict | None = None
+        battery: int | None = None
+        holiday: dict | None = None
 
-        while retry_count < RETRY_COUNT:
+        while (
+            retry_count < RETRY_COUNT
+            and retrieved_temperatures is None
+            and battery is None
+            and holiday is None
+        ):
             try:
                 async with self.device:
                     if not self.device.connected:
@@ -107,11 +113,16 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                             f"Failed to connect to '{self.device.device.address}'"
                         )
                     # temperatures are required and must trigger a retry if not available
-                    retrieved_temperatures = await self.device.get_temperature_async()
+                    if not retrieved_temperatures:
+                        retrieved_temperatures = (
+                            await self.device.get_temperature_async()
+                        )
                     # battery and holiday are optional and should not trigger a retry
                     try:
-                        battery = await self.device.get_battery_async()
-                        holiday = await self.device.get_holiday_async(1)
+                        if battery is None:
+                            battery = await self.device.get_battery_async()
+                        if not holiday:
+                            holiday = await self.device.get_holiday_async(1) or {}
                     except InvalidByteValueError as ex:
                         LOGGER.warning(
                             "Failed to retrieve optional data: %s (%s)",

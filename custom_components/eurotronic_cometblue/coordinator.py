@@ -171,7 +171,7 @@ class CometBlueBluetoothEntity(CoordinatorEntity[CometBlueDataUpdateCoordinator]
     def available(self) -> bool:
         """Return if entity is available."""
         return (
-            self.coordinator.failed_update_count < self.retry_count
+            self.coordinator.failed_update_count < self.coordinator.retry_count
             and bluetooth.async_address_present(
                 self.hass, self.coordinator.address, True
             )

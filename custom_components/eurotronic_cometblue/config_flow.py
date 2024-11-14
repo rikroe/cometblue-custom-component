@@ -11,7 +11,7 @@ import voluptuous as vol
 from homeassistant.components.bluetooth import async_discovered_service_info
 from homeassistant.components.bluetooth.models import BluetoothServiceInfoBleak
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_ADDRESS, CONF_NAME, CONF_PIN, CONF_TIMEOUT
+from homeassistant.const import CONF_ADDRESS, CONF_PIN, CONF_TIMEOUT
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import NumberSelector, NumberSelectorConfig
@@ -23,7 +23,6 @@ from .const import (
     DEFAULT_TIMEOUT_SECONDS,
     DOMAIN,
 )
-
 
 DATA_SCHEMA = vol.Schema(
     {
@@ -70,13 +69,11 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
             raise ValueError("Discovery info not set")
 
         return self.async_create_entry(
-            title=name_from_discovery(self._discovery_info),
+            title=device_name,
             data={
                 CONF_ADDRESS: self._discovery_info.address,
                 CONF_PIN: pin,
                 CONF_DEVICE_NAME: device_name,
-            },
-            options={
                 CONF_TIMEOUT: DEFAULT_TIMEOUT_SECONDS,
                 CONF_RETRY_COUNT: DEFAULT_RETRY_COUNT,
             },

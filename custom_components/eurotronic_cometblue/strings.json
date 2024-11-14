@@ -15,6 +15,16 @@
       }
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "timeout": "Connection timeout in seconds",
+          "retry_count": "Number of retries"
+        }
+      }
+    }
+  },
   "services": {
     "set_datetime": {
       "name": "Set datetime",

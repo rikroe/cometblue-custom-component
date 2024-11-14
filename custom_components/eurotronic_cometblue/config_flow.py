@@ -102,7 +102,7 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_TIMEOUT: DEFAULT_TIMEOUT_SECONDS,
                 CONF_RETRY_COUNT: DEFAULT_RETRY_COUNT,
             }
-            | self._existing_entry_data,
+            | (self._existing_entry_data or {}),
         )
 
         return self.async_show_form(

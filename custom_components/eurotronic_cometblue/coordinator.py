@@ -143,8 +143,8 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
 
         # If one value was not retrieved correctly, keep the old value
         data = {
-            "battery": battery or self.data.get("battery"),
-            "holiday": holiday or self.data.get("holiday"),
+            "battery": battery if battery is not None else self.data.get("battery"),
+            "holiday": holiday if holiday is not None else self.data.get("holiday", {}),
             **{
                 k: retrieved_temperatures.get(k) or self.data.get(k)
                 for k in CONF_ALL_TEMPERATURES

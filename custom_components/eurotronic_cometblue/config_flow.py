@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from cometblue.const import SERVICE
@@ -9,14 +10,8 @@ import voluptuous as vol
 
 from homeassistant.components.bluetooth import async_discovered_service_info
 from homeassistant.components.bluetooth.models import BluetoothServiceInfoBleak
-from homeassistant.config_entries import (
-    ConfigEntry,
-    ConfigFlow,
-    ConfigFlowResult,
-    OptionsFlow,
-)
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, CONF_PIN, CONF_TIMEOUT
-from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import NumberSelector, NumberSelectorConfig
@@ -27,6 +22,22 @@ from .const import (
     DEFAULT_RETRY_COUNT,
     DEFAULT_TIMEOUT_SECONDS,
     DOMAIN,
+)
+
+
+DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_PIN): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=99999999)
+        ),
+        vol.Optional(CONF_DEVICE_NAME): str,
+        vol.Optional(CONF_TIMEOUT): NumberSelector(
+            NumberSelectorConfig(min=10, max=60, step=5)
+        ),
+        vol.Optional(CONF_RETRY_COUNT): NumberSelector(
+            NumberSelectorConfig(min=1, max=5, step=1)
+        ),
+    }
 )
 
 
@@ -43,6 +54,8 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for CometBlue."""
 
     VERSION = 1
+
+    _existing_entry_data: Mapping[str, Any] | None = None
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -79,24 +92,23 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
                 user_input[CONF_PIN], user_input.get(CONF_DEVICE_NAME)
             )
 
+        schema = self.add_suggested_values_to_schema(
+            DATA_SCHEMA,
+            {
+                CONF_PIN: 0,
+                CONF_DEVICE_NAME: name_from_discovery(self._discovery_info),
+                CONF_TIMEOUT: DEFAULT_TIMEOUT_SECONDS,
+                CONF_RETRY_COUNT: DEFAULT_RETRY_COUNT,
+            }
+            | self._existing_entry_data,
+        )
+
         return self.async_show_form(
             step_id="bluetooth_confirm",
             description_placeholders={
                 CONF_NAME: name_from_discovery(self._discovery_info),
             },
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_PIN, description={"suggested_value": "0"}
-                    ): vol.All(vol.Coerce(int), vol.Range(min=0, max=99999999)),
-                    vol.Optional(
-                        CONF_DEVICE_NAME,
-                        description={
-                            "suggested_value": name_from_discovery(self._discovery_info)
-                        },
-                    ): str,
-                },
-            ),
+            data_schema=schema,
         )
 
     async def async_step_bluetooth(
@@ -163,41 +175,9 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return await self.async_step_pick_device()
 
-    @staticmethod
-    @callback
-    def async_get_options_flow(
-        config_entry: ConfigEntry,
-    ) -> CometBlueOptionsFlow:
-        """Return a MyCometBlue option flow."""
-        return CometBlueOptionsFlow()
-
-
-class CometBlueOptionsFlow(OptionsFlow):
-    """Handle a option flow for CometBlue."""
-
-    async def async_step_init(
+    async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Manage the options."""
-        if user_input is not None:
-            return self.async_create_entry(data=user_input)
-
-        options_schema = vol.Schema(
-            {
-                vol.Optional(CONF_TIMEOUT): NumberSelector(
-                    NumberSelectorConfig(min=10, max=60, step=5)
-                ),
-            },
-            {
-                vol.Optional(CONF_RETRY_COUNT): NumberSelector(
-                    NumberSelectorConfig(min=1, max=5, step=1)
-                ),
-            },
-        )
-
-        return self.async_show_form(
-            step_id="init",
-            data_schema=self.add_suggested_values_to_schema(
-                options_schema, self.config_entry.options
-            ),
-        )
+        """Handle a reconfiguration flow initialized by the user."""
+        self._existing_entry_data = self._get_reconfigure_entry().data
+        return await self.async_step_bluetooth_confirm()

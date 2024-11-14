@@ -9,16 +9,8 @@
         "description": "Do you want to add the Comet Blue TRV `{name}` to Home Assistant?",
         "title": "Discovered Comet Blue TRV",
         "data": {
-          "pin": "Please enter PIN",
-          "device_name": "Device name (Optional)"
-        }
-      }
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "data": {
+          "device_name": "Device name (Optional)",
+          "pin": "Device PIN (without leading zeros)",
           "timeout": "Connection timeout in seconds",
           "retry_count": "Number of retries"
         }

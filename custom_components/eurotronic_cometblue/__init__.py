@@ -59,15 +59,12 @@ def _async_migrate_options_if_missing(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> None:
     data = dict(entry.data)
-    options = dict(entry.options)
 
-    if list(options) != list(DEFAULT_OPTIONS):
-        options = dict(
-            DEFAULT_OPTIONS,
-            **{k: v for k, v in options.items() if k in DEFAULT_OPTIONS},
-        )
+    if CONF_TIMEOUT not in entry.data or CONF_RETRY_COUNT not in entry.data:
+        data[CONF_TIMEOUT] = entry.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT_SECONDS)
+        data[CONF_RETRY_COUNT] = entry.data.get(CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT)
 
-        hass.config_entries.async_update_entry(entry, data=data, options=options)
+        hass.config_entries.async_update_entry(entry, data=data)
 
 
 
@@ -88,8 +85,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     cometblue_device = cometblue.AsyncCometBlue(
         device=ble_device,
         pin=entry.data.get(CONF_PIN),
-        timeout=entry.options[CONF_TIMEOUT],
-        retries=entry.options[CONF_RETRY_COUNT],
+        timeout=entry.data[CONF_TIMEOUT],
+        retries=entry.data[CONF_RETRY_COUNT],
     )
     try:
         async with cometblue_device:
@@ -118,7 +115,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             f"Failed to get device info from '{cometblue_device.device.address}'"
         ) from ex
 
-    coordinator = CometBlueDataUpdateCoordinator(hass, cometblue_device, device_info, retry_count=entry.options[CONF_RETRY_COUNT])
+    coordinator = CometBlueDataUpdateCoordinator(hass, cometblue_device, device_info, retry_count=entry.data[CONF_RETRY_COUNT])
     await coordinator.async_config_entry_first_refresh()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 

@@ -12,7 +12,7 @@ import voluptuous as vol
 
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ADDRESS, CONF_PIN, Platform
+from homeassistant.const import CONF_ADDRESS, CONF_PIN, CONF_TIMEOUT, Platform
 from homeassistant.core import (
     HomeAssistant,
     ServiceCall,
@@ -23,7 +23,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from .const import CONF_ALL_DAYS, CONF_DEVICE_NAME, DOMAIN
+from .const import CONF_ALL_DAYS, CONF_DEVICE_NAME, CONF_RETRY_COUNT, DOMAIN
 from .coordinator import CometBlueDataUpdateCoordinator
 from .utils import (
     SERVICE_DATETIME_SCHEMA,
@@ -39,8 +39,6 @@ PLATFORMS: list[Platform] = [
     Platform.SENSOR,
 ]
 LOGGER = logging.getLogger(__name__)
-TIMEOUT = 20
-CONNECT_RETRIES = 3
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -58,8 +56,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     cometblue_device = cometblue.AsyncCometBlue(
         device=ble_device,
         pin=entry.data.get(CONF_PIN),
-        timeout=TIMEOUT,
-        retries=CONNECT_RETRIES,
+        timeout=entry.options[CONF_TIMEOUT],
+        retries=entry.options[CONF_RETRY_COUNT],
     )
     try:
         async with cometblue_device:
@@ -88,7 +86,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             f"Failed to get device info from '{cometblue_device.device.address}'"
         ) from ex
 
-    coordinator = CometBlueDataUpdateCoordinator(hass, cometblue_device, device_info)
+    coordinator = CometBlueDataUpdateCoordinator(hass, cometblue_device, device_info, retry_count=entry.options[CONF_RETRY_COUNT])
     await coordinator.async_config_entry_first_refresh()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 

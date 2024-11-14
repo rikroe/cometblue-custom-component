@@ -7,14 +7,27 @@ from typing import Any
 from cometblue.const import SERVICE
 import voluptuous as vol
 
-from homeassistant import config_entries
 from homeassistant.components.bluetooth import async_discovered_service_info
 from homeassistant.components.bluetooth.models import BluetoothServiceInfoBleak
-from homeassistant.const import CONF_ADDRESS, CONF_NAME, CONF_PIN
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
+from homeassistant.const import CONF_ADDRESS, CONF_NAME, CONF_PIN, CONF_TIMEOUT
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.device_registry import format_mac
+from homeassistant.helpers.selector import NumberSelector, NumberSelectorConfig
 
-from .const import CONF_DEVICE_NAME, DOMAIN
+from .const import (
+    CONF_DEVICE_NAME,
+    CONF_RETRY_COUNT,
+    DEFAULT_RETRY_COUNT,
+    DEFAULT_TIMEOUT_SECONDS,
+    DOMAIN,
+)
 
 
 def name_from_discovery(discovery: BluetoothServiceInfoBleak | None) -> str:
@@ -26,7 +39,7 @@ def name_from_discovery(discovery: BluetoothServiceInfoBleak | None) -> str:
     return f"{discovery.name} {discovery.address}"
 
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for CometBlue."""
 
     VERSION = 1
@@ -49,6 +62,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_ADDRESS: self._discovery_info.address,
                 CONF_PIN: pin,
                 CONF_DEVICE_NAME: device_name,
+            },
+            options={
+                CONF_TIMEOUT: DEFAULT_TIMEOUT_SECONDS,
+                CONF_RETRY_COUNT: DEFAULT_RETRY_COUNT,
             },
         )
 
@@ -145,3 +162,42 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle a flow initialized by the user."""
 
         return await self.async_step_pick_device()
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> CometBlueOptionsFlow:
+        """Return a MyCometBlue option flow."""
+        return CometBlueOptionsFlow()
+
+
+class CometBlueOptionsFlow(OptionsFlow):
+    """Handle a option flow for CometBlue."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+
+        options_schema = vol.Schema(
+            {
+                vol.Optional(CONF_TIMEOUT): NumberSelector(
+                    NumberSelectorConfig(min=10, max=60, step=5)
+                ),
+            },
+            {
+                vol.Optional(CONF_RETRY_COUNT): NumberSelector(
+                    NumberSelectorConfig(min=1, max=5, step=1)
+                ),
+            },
+        )
+
+        return self.async_show_form(
+            step_id="account_options",
+            data_schema=self.add_suggested_values_to_schema(
+                options_schema, self.config_entry.options
+            ),
+        )

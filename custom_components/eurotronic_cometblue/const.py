@@ -8,6 +8,7 @@ DEFAULT_NAME: Final = "Eurotronic CometBlue"
 CONF_DEVICE_NAME: Final = "device_name"
 CONF_DATETIME: Final = "datetime"
 CONF_SCHEDULE: Final = "schedule"
+CONF_RETRY_COUNT: Final = "retry_count"
 
 
 CONF_MONDAY: Final = "monday"
@@ -41,3 +42,6 @@ CONF_ALL_TEMPERATURES: Final = {
     "windowOpen",
     "windowOpenMinutes",
 }
+
+DEFAULT_TIMEOUT_SECONDS: Final = 20
+DEFAULT_RETRY_COUNT: Final = 3

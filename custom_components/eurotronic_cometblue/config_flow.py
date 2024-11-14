@@ -92,11 +92,16 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
                 user_input[CONF_PIN], user_input.get(CONF_DEVICE_NAME)
             )
 
+        try:
+            device_name = name_from_discovery(self._discovery_info)
+        except ValueError:
+            device_name = None
+
         schema = self.add_suggested_values_to_schema(
             DATA_SCHEMA,
             {
                 CONF_PIN: 0,
-                CONF_DEVICE_NAME: name_from_discovery(self._discovery_info),
+                CONF_DEVICE_NAME: device_name,
                 CONF_TIMEOUT: DEFAULT_TIMEOUT_SECONDS,
                 CONF_RETRY_COUNT: DEFAULT_RETRY_COUNT,
             }
@@ -106,7 +111,7 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="bluetooth_confirm",
             description_placeholders={
-                CONF_NAME: name_from_discovery(self._discovery_info),
+                CONF_NAME: device_name,
             },
             data_schema=schema,
         )

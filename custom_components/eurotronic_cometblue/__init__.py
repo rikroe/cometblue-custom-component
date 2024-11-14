@@ -18,12 +18,20 @@ from homeassistant.core import (
     ServiceCall,
     ServiceResponse,
     SupportsResponse,
+    callback,
 )
 from homeassistant.exceptions import ConfigEntryNotReady
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from .const import CONF_ALL_DAYS, CONF_DEVICE_NAME, CONF_RETRY_COUNT, DOMAIN
+from .const import (
+    CONF_ALL_DAYS,
+    CONF_DEVICE_NAME,
+    CONF_RETRY_COUNT,
+    DEFAULT_RETRY_COUNT,
+    DEFAULT_TIMEOUT_SECONDS,
+    DOMAIN,
+)
 from .coordinator import CometBlueDataUpdateCoordinator
 from .utils import (
     SERVICE_DATETIME_SCHEMA,
@@ -33,6 +41,11 @@ from .utils import (
     get_coordinator_for_service,
 )
 
+DEFAULT_OPTIONS = {
+    CONF_TIMEOUT: DEFAULT_TIMEOUT_SECONDS,
+    CONF_RETRY_COUNT: DEFAULT_RETRY_COUNT,
+}
+
 PLATFORMS: list[Platform] = [
     Platform.CLIMATE,
     Platform.NUMBER,
@@ -41,8 +54,27 @@ PLATFORMS: list[Platform] = [
 LOGGER = logging.getLogger(__name__)
 
 
+@callback
+def _async_migrate_options_if_missing(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> None:
+    data = dict(entry.data)
+    options = dict(entry.options)
+
+    if list(options) != list(DEFAULT_OPTIONS):
+        options = dict(
+            DEFAULT_OPTIONS,
+            **{k: v for k, v in options.items() if k in DEFAULT_OPTIONS},
+        )
+
+        hass.config_entries.async_update_entry(entry, data=data, options=options)
+
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Gardena Bluetooth from a config entry."""
+
+    _async_migrate_options_if_missing(hass, entry)
 
     address = entry.data[CONF_ADDRESS]
 

@@ -6,7 +6,7 @@
     },
     "step": {
       "bluetooth_confirm": {
-        "description": "Do you want to add the Comet Blue TRV `{name}` to Home Assistant?",
+        "description": "Configure Comet Blue TRV?",
         "title": "Discovered Comet Blue TRV",
         "data": {
           "device_name": "Device name (Optional)",

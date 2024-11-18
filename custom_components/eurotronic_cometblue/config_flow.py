@@ -10,7 +10,11 @@ import voluptuous as vol
 
 from homeassistant.components.bluetooth import async_discovered_service_info
 from homeassistant.components.bluetooth.models import BluetoothServiceInfoBleak
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    SOURCE_RECONFIGURE,
+    ConfigFlow,
+    ConfigFlowResult,
+)
 from homeassistant.const import CONF_ADDRESS, CONF_PIN, CONF_TIMEOUT
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.device_registry import format_mac
@@ -62,22 +66,35 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
         self._discovered_device: str | None = None
         self._discovered_devices: list[str] = []
 
-    def _create_entry(self, pin: int, device_name: str | None = None) -> FlowResult:
+    def _create_entry(
+        self,
+        pin: int,
+        device_name: str | None = None,
+        timeout: int = DEFAULT_TIMEOUT_SECONDS,
+        retry_count: int = DEFAULT_RETRY_COUNT,
+    ) -> FlowResult:
         """Create an entry for a discovered device."""
+
+        entry_data = {
+            CONF_ADDRESS: None,
+            CONF_PIN: pin,
+            CONF_DEVICE_NAME: device_name,
+            CONF_TIMEOUT: timeout,
+            CONF_RETRY_COUNT: retry_count,
+        }
+
+        if self.source == SOURCE_RECONFIGURE:
+            entry_data[CONF_ADDRESS] = self._existing_entry_data[CONF_ADDRESS]
+            return self.async_update_reload_and_abort(
+                self._get_reconfigure_entry(),
+                data=entry_data,
+            )
 
         if self._discovery_info is None or self._discovery_info.address is None:
             raise ValueError("Discovery info not set")
+        entry_data[CONF_ADDRESS] = self._discovery_info.address
 
-        return self.async_create_entry(
-            title=device_name,
-            data={
-                CONF_ADDRESS: self._discovery_info.address,
-                CONF_PIN: pin,
-                CONF_DEVICE_NAME: device_name,
-                CONF_TIMEOUT: DEFAULT_TIMEOUT_SECONDS,
-                CONF_RETRY_COUNT: DEFAULT_RETRY_COUNT,
-            },
-        )
+        return self.async_create_entry(title=device_name, data=entry_data)
 
     async def async_step_bluetooth_confirm(
         self, user_input: dict[str, Any] | None = None
@@ -86,7 +103,10 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             return self._create_entry(
-                user_input[CONF_PIN], user_input.get(CONF_DEVICE_NAME)
+                user_input[CONF_PIN],
+                user_input.get(CONF_DEVICE_NAME),
+                timeout=user_input.get(CONF_TIMEOUT),
+                retry_count=user_input.get(CONF_RETRY_COUNT),
             )
 
         try:

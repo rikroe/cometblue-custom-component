@@ -2,7 +2,8 @@
   "config": {
     "flow_title": "{name}",
     "abort": {
-      "no_devices_found": "There aren't any Comet Blue Bluetooth TRVs nearby."
+      "no_devices_found": "There aren't any Comet Blue Bluetooth TRVs nearby.",
+      "reconfigure_successful": "Re-configuration was successful"
     },
     "step": {
       "bluetooth_confirm": {

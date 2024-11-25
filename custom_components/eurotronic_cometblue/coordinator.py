@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
 import logging
 from typing import Any
@@ -86,6 +87,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                     type(ex).__name__,
                     ex,
                 )
+                await asyncio.sleep(1)
             except ValueError as ex:
                 raise ServiceValidationError(
                     f"Invalid payload '{payload}' for '{caller_entity_id}': {ex}"
@@ -140,6 +142,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                     type(ex).__name__,
                     ex,
                 )
+                await asyncio.sleep(1)
             except Exception as ex:
                 raise UpdateFailed(f"({type(ex).__name__}) {ex}") from ex
 

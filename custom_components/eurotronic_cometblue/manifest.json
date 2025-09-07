@@ -15,7 +15,7 @@
   "issue_tracker": "https://github.com/rikroe/cometblue-custom-component/issues/",
   "loggers": ["cometblue"],
   "requirements": [
-    "git+https://github.com/rikroe/eurotronic-cometblue.git@ha-component#eurotronic-cometblue==1.0"
+    "eurotronic-cometblue @ git+https://github.com/rikroe/eurotronic-cometblue.git@v1.3.0"
   ],
-  "version": "20241118.1"
+  "version": "20250907.1"
 }

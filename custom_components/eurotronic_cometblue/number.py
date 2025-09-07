@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import logging
 from typing import Any
 
-from cometblue import AsyncCometBlue
+from eurotronic_cometblue_ha import AsyncCometBlue
 
 from homeassistant.components.number import (
     NumberDeviceClass,

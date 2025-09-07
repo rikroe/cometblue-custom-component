@@ -7,7 +7,7 @@ import logging
 from uuid import UUID
 
 from bleak import BleakError
-import cometblue
+from eurotronic_cometblue_ha import AsyncCometBlue
 import voluptuous as vol
 
 from homeassistant.components import bluetooth
@@ -82,7 +82,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             f"Couldn't find a nearby device for address: {entry.data[CONF_ADDRESS]}"
         )
 
-    cometblue_device = cometblue.AsyncCometBlue(
+    cometblue_device = AsyncCometBlue(
         device=ble_device,
         pin=entry.data.get(CONF_PIN),
         timeout=entry.data[CONF_TIMEOUT],

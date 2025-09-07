@@ -13,9 +13,9 @@
   "documentation": "https://github.com/rikroe/cometblue-custom-component/",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/rikroe/cometblue-custom-component/issues/",
-  "loggers": ["cometblue"],
+  "loggers": ["eurotronic_cometblue_ha"],
   "requirements": [
-    "eurotronic-cometblue @ git+https://github.com/rikroe/eurotronic-cometblue.git@v1.3.0"
+    "eurotronic-cometblue-ha==1.3.0"
   ],
-  "version": "20250907.1"
+  "version": "20250907.2"
 }

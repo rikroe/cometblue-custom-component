@@ -8,7 +8,7 @@ import logging
 from typing import Any
 
 from bleak import BleakError
-from cometblue import AsyncCometBlue, InvalidByteValueError
+from eurotronic_cometblue_ha import AsyncCometBlue, InvalidByteValueError
 
 from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant

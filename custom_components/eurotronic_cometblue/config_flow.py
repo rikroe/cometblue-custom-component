@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from cometblue.const import SERVICE
+from eurotronic_cometblue_ha.const import SERVICE
 import voluptuous as vol
 
 from homeassistant.components.bluetooth import async_discovered_service_info

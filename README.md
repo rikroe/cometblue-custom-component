@@ -3,7 +3,7 @@
 [![GitHub Release][releases-shield]][releases]
 [![License][license-shield]](LICENSE)
 
-A custom component based on [zero-udo/eurotronic-cometblue](https://github.com/zero-udo/eurotronic-cometblue) to support Eurotronic's CometBlue thermostats (and similar).
+A custom component based on [rikroe/eurotronic-cometblue](https://github.com/rikroe/eurotronic-cometblue) to support Eurotronic's CometBlue thermostats (and similar).
 
 We support the same devices as our upstream library:
 - Eurotronic Comet Blue

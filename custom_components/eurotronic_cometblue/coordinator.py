@@ -99,13 +99,13 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
         data: dict = {}
 
         retry_count = 0
-        retrieved_temperatures: dict | None = None
+        retrieved_temperatures = {}
         battery: int | None = None
         holiday: dict | None = None
 
         while (
             retry_count < self.retry_count
-            and retrieved_temperatures is None
+            and not retrieved_temperatures
             and battery is None
             and holiday is None
         ):

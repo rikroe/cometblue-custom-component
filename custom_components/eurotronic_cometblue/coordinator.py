@@ -87,7 +87,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                     type(ex).__name__,
                     ex,
                 )
-                await asyncio.sleep(1)
+                await asyncio.sleep(2.5)
             except ValueError as ex:
                 raise ServiceValidationError(
                     f"Invalid payload '{payload}' for '{caller_entity_id}': {ex}"
@@ -142,7 +142,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                     type(ex).__name__,
                     ex,
                 )
-                await asyncio.sleep(1)
+                await asyncio.sleep(2.5)
             except Exception as ex:
                 raise UpdateFailed(f"({type(ex).__name__}) {ex}", retry_after=30) from ex
 

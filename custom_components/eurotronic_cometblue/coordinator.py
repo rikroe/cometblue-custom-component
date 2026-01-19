@@ -136,7 +136,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                 retry_count += 1
                 if retry_count >= self.retry_count:
                     self.failed_update_count += 1
-                    raise UpdateFailed(f"Error retrieving data: {ex}") from ex
+                    raise UpdateFailed(f"Error retrieving data: {ex}", retry_after=30) from ex
                 LOGGER.info(
                     "Retrying after %s (%s)",
                     type(ex).__name__,
@@ -144,7 +144,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                 )
                 await asyncio.sleep(1)
             except Exception as ex:
-                raise UpdateFailed(f"({type(ex).__name__}) {ex}") from ex
+                raise UpdateFailed(f"({type(ex).__name__}) {ex}", retry_after=30) from ex
 
         # If one value was not retrieved correctly, keep the old value
         data = {

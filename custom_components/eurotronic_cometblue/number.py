@@ -38,7 +38,7 @@ class CometBlueRequiredKeysMixin:
 class CometBlueNumberEntityDescription(
     NumberEntityDescription, CometBlueRequiredKeysMixin
 ):
-    """Describes a Comet Blue number entiy."""
+    """Describes a Comet Blue number entity."""
 
 
 DESCRIPTIONS = [

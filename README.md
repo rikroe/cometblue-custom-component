@@ -6,6 +6,7 @@
 A custom component based on [rikroe/eurotronic-cometblue](https://github.com/rikroe/eurotronic-cometblue) to support Eurotronic's CometBlue thermostats (and similar).
 
 We support the same devices as our upstream library:
+
 - Eurotronic Comet Blue
 - Sygonix HT100 BT
 - Xavax Hama
@@ -15,18 +16,18 @@ This component aims to support as many of the TRV functions as possible, adding 
 
 **This integration will set up the following platforms.**
 
-Platform | Description
--- | --
-`climate` | Climate entity with **target temperature**, **target temperature range** and **preset mode** support.<br />Supported preset modes: `none` (manual mode), `eco` (low temperature), `away` (not implemented yet), `comfort` (high temperature)
-`number` | Number entities to adjust additional TRV settings: **offset**, **target temperature low**, **target temperature high**, **window open time in minutes**
-`sensor` | Sensor entities for TRV state: **battery**
-`service` | Services to interact with schedules and dates: **set_datetime**, **get_schedule**, **set_schedule**
+| Platform  | Description                                                                                                                                                                                                                                  |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `climate` | Climate entity with **target temperature**, **target temperature range** and **preset mode** support.<br />Supported preset modes: `none` (manual mode), `eco` (low temperature), `away` (not implemented yet), `comfort` (high temperature) |
+| `number`  | Number entities to adjust additional TRV settings: **offset**, **target temperature low**, **target temperature high**, **window open time in minutes**                                                                                      |
+| `sensor`  | Sensor entities for TRV state: **battery**                                                                                                                                                                                                   |
+| `service` | Services to interact with schedules and dates: **set_datetime**, **get_schedule**, **set_schedule**                                                                                                                                          |
 
 ## Installation (HACS)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rikroe&repository=cometblue-custom-component&category=integration)
 
-When using HACS, just add this repository as a [custom repostiory](https://hacs.xyz/docs/faq/custom_repositories) of category `Integration` with the url `https://github.com/rikroe/cometblue-custom-component`.
+When using HACS, just add this repository as a [custom repository](https://hacs.xyz/docs/faq/custom_repositories) of category `Integration` with the url `https://github.com/rikroe/cometblue-custom-component`.
 
 ## Installation (manual)
 

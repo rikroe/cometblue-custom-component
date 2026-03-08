@@ -5,7 +5,6 @@ from typing import Final
 DOMAIN: Final = "eurotronic_cometblue"
 DEFAULT_NAME: Final = "Eurotronic CometBlue"
 
-CONF_DEVICE_NAME: Final = "device_name"
 CONF_DATETIME: Final = "datetime"
 CONF_SCHEDULE: Final = "schedule"
 CONF_RETRY_COUNT: Final = "retry_count"

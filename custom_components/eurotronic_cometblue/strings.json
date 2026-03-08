@@ -1,95 +1,94 @@
 {
   "config": {
-    "flow_title": "{name}",
     "abort": {
       "no_devices_found": "There aren't any Comet Blue Bluetooth TRVs nearby.",
       "reconfigure_successful": "Re-configuration was successful"
     },
+    "flow_title": "{name}",
     "step": {
       "bluetooth_confirm": {
-        "description": "Configure Comet Blue TRV?",
-        "title": "Discovered Comet Blue TRV",
         "data": {
-          "device_name": "Device name (Optional)",
           "pin": "Device PIN (without leading zeros)",
-          "timeout": "Connection timeout in seconds",
-          "retry_count": "Number of retries"
-        }
+          "retry_count": "Number of retries",
+          "timeout": "Connection timeout in seconds"
+        },
+        "description": "Configure Comet Blue TRV?",
+        "title": "Discovered Comet Blue TRV"
       }
     }
   },
   "services": {
-    "set_datetime": {
-      "name": "Set datetime",
-      "description": "Set datetime on device.",
-      "fields": {
-        "datetime": {
-          "name": "Datetime",
-          "description": "(Optional) A specific datetime. Defaults to current local datetime."
-        }
-      }
-    },
     "get_schedule": {
-      "name": "Get schedule",
       "description": "Get schedule from device.",
       "fields": {
         "entity_id": {
-          "name": "Entity",
-          "description": "CometBlue entity to retrieve the schedule from."
+          "description": "CometBlue entity to retrieve the schedule from.",
+          "name": "Entity"
         }
-      }
+      },
+      "name": "Get schedule"
     },
-    "set_schedule": {
-      "name": "Set schedule",
-      "description": "Set schedule on device. A weekday not given will be ignored. Set to `delete: true` to delete a schedule for a day.",
+    "set_datetime": {
+      "description": "Set datetime on device.",
       "fields": {
-        "monday": {
-          "name": "[%key:common::time::monday%]",
-          "description": "Day schedule in 24h-format, from start1/end1 to start4/end. Not all pairs need to be set."
-        },
-        "tuesday": {
-          "name": "[%key:common::time::tuesday%]",
-          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
-        },
-        "wednesday": {
-          "name": "[%key:common::time::wednesday%]",
-          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
-        },
-        "thursday": {
-          "name": "[%key:common::time::thursday%]",
-          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
-        },
-        "friday": {
-          "name": "[%key:common::time::friday%]",
-          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
-        },
-        "saturday": {
-          "name": "[%key:common::time::saturday%]",
-          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
-        },
-        "sunday": {
-          "name": "[%key:common::time::sunday%]",
-          "description": "[%key:component::cometblue::services::set_schedule::fields::monday::description%]"
+        "datetime": {
+          "description": "(Optional) A specific datetime. Defaults to current local datetime.",
+          "name": "Datetime"
         }
-      }
+      },
+      "name": "Set datetime"
     },
     "set_holiday": {
-      "name": "Set holiday (away mode)",
       "description": "Set holiday/away mode on device.",
       "fields": {
-        "start": {
-          "name": "Start",
-          "description": "Start of the away mode."
-        },
         "end": {
-          "name": "End",
-          "description": "End of the away mode."
+          "description": "End of the away mode.",
+          "name": "End"
+        },
+        "start": {
+          "description": "Start of the away mode.",
+          "name": "Start"
         },
         "temperature": {
-          "name": "Temperature",
-          "description": "Temperature during away mode."
+          "description": "Temperature during away mode.",
+          "name": "Temperature"
         }
-      }
+      },
+      "name": "Set holiday (away mode)"
+    },
+    "set_schedule": {
+      "description": "Set schedule on device. A weekday not given will be ignored. Set to `delete: true` to delete a schedule for a day.",
+      "fields": {
+        "friday": {
+          "description": "Day schedule in 24h-format, from start1/end1 to start4/end. Not all pairs need to be set.",
+          "name": "[%key:common::time::friday%]"
+        },
+        "monday": {
+          "description": "Day schedule in 24h-format, from start1/end1 to start4/end. Not all pairs need to be set.",
+          "name": "[%key:common::time::monday%]"
+        },
+        "saturday": {
+          "description": "Day schedule in 24h-format, from start1/end1 to start4/end. Not all pairs need to be set.",
+          "name": "[%key:common::time::saturday%]"
+        },
+        "sunday": {
+          "description": "Day schedule in 24h-format, from start1/end1 to start4/end. Not all pairs need to be set.",
+          "name": "[%key:common::time::sunday%]"
+        },
+        "thursday": {
+          "description": "Day schedule in 24h-format, from start1/end1 to start4/end. Not all pairs need to be set.",
+          "name": "[%key:common::time::thursday%]"
+        },
+        "tuesday": {
+          "description": "Day schedule in 24h-format, from start1/end1 to start4/end. Not all pairs need to be set.",
+          "name": "[%key:common::time::tuesday%]"
+        },
+        "wednesday": {
+          "description": "Day schedule in 24h-format, from start1/end1 to start4/end. Not all pairs need to be set.",
+          "name": "[%key:common::time::wednesday%]"
+        }
+      },
+      "name": "Set schedule"
     }
   }
 }

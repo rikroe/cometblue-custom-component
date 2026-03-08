@@ -10,10 +10,11 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import DOMAIN
-from .coordinator import CometBlueBluetoothEntity, CometBlueDataUpdateCoordinator
+from .coordinator import CometBlueDataUpdateCoordinator
+from .entity import CometBlueBluetoothEntity
 
 DESCRIPTIONS = [
     SensorEntityDescription(
@@ -26,7 +27,9 @@ DESCRIPTIONS = [
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Gardena Bluetooth sensor based on a config entry."""
     coordinator: CometBlueDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]

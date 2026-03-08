@@ -6,7 +6,7 @@ from datetime import datetime
 import logging
 from uuid import UUID
 
-from bleak import BleakError
+from bleak.exc import BleakError
 from eurotronic_cometblue_ha import AsyncCometBlue
 import voluptuous as vol
 
@@ -26,7 +26,6 @@ from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import (
     CONF_ALL_DAYS,
-    CONF_DEVICE_NAME,
     CONF_RETRY_COUNT,
     DEFAULT_RETRY_COUNT,
     DEFAULT_TIMEOUT_SECONDS,
@@ -55,9 +54,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 @callback
-def _async_migrate_options_if_missing(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> None:
+def _async_migrate_options_if_missing(hass: HomeAssistant, entry: ConfigEntry) -> None:
     data = dict(entry.data)
 
     if CONF_TIMEOUT not in entry.data or CONF_RETRY_COUNT not in entry.data:
@@ -65,7 +62,6 @@ def _async_migrate_options_if_missing(
         data[CONF_RETRY_COUNT] = entry.data.get(CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT)
 
         hass.config_entries.async_update_entry(entry, data=data)
-
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -84,7 +80,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     cometblue_device = AsyncCometBlue(
         device=ble_device,
-        pin=entry.data.get(CONF_PIN),
+        pin=entry.data[CONF_PIN],
         timeout=entry.data[CONF_TIMEOUT],
         retries=entry.data[CONF_RETRY_COUNT],
     )
@@ -96,8 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
             device_info = DeviceInfo(
                 identifiers={(DOMAIN, address)},
-                name=entry.data.get(CONF_DEVICE_NAME)
-                or f"{cometblue_device.device.name} {cometblue_device.device.address}",
+                name=f"{cometblue_device.device.name} {cometblue_device.device.address}",
                 sw_version=bytes(
                     await cometblue_device.client.read_gatt_char(
                         UUID("00002a28-0000-1000-8000-00805f9b34fb")
@@ -115,7 +110,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             f"Failed to get device info from '{cometblue_device.device.address}'"
         ) from ex
 
-    coordinator = CometBlueDataUpdateCoordinator(hass, cometblue_device, device_info, retry_count=entry.data[CONF_RETRY_COUNT])
+    coordinator = CometBlueDataUpdateCoordinator(
+        hass,
+        entry,
+        cometblue_device,
+        device_info,
+        retry_count=entry.data[CONF_RETRY_COUNT],
+    )
     await coordinator.async_config_entry_first_refresh()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 

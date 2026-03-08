@@ -8,6 +8,7 @@ import logging
 from typing import Any
 
 from eurotronic_cometblue_ha import AsyncCometBlue
+from propcache.api import cached_property
 
 from homeassistant.components.number import (
     NumberDeviceClass,
@@ -17,16 +18,17 @@ from homeassistant.components.number import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PRECISION_HALVES, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .climate import MAX_TEMP, MIN_TEMP
 from .const import DOMAIN
-from .coordinator import CometBlueBluetoothEntity, CometBlueDataUpdateCoordinator
+from .coordinator import CometBlueDataUpdateCoordinator
+from .entity import CometBlueBluetoothEntity
 
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class CometBlueRequiredKeysMixin:
     """Mixin for required keys."""
 
@@ -34,7 +36,7 @@ class CometBlueRequiredKeysMixin:
     set_fn: Callable[[AsyncCometBlue], Any]
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class CometBlueNumberEntityDescription(
     NumberEntityDescription, CometBlueRequiredKeysMixin
 ):
@@ -94,7 +96,9 @@ DESCRIPTIONS = [
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Gardena Bluetooth number based on a config entry."""
     coordinator: CometBlueDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
@@ -122,7 +126,7 @@ class CometBlueNumberEntity(CometBlueBluetoothEntity, NumberEntity):
         self.entity_description = description
         self._attr_unique_id = f"{coordinator.address}-{description.key}"
 
-    @property
+    @cached_property
     def native_value(self) -> float | None:
         """Return the entity value to represent the entity state."""
         return self.coordinator.data.get(self.entity_description.cometblue_key)

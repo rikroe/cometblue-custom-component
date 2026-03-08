@@ -78,7 +78,7 @@ def validate_cometblue_schedule(schedule: dict[str, time]) -> dict[str, time] | 
         # Check if the from time of the event is after the to time of the previous event
         if previous_to is not None and previous_to > schedule[curr_start]:
             raise vol.Invalid(
-                f"Overlapping times found in schedule, '{curr_start}' is before '{CONF_END}{i-1}'"
+                f"Overlapping times found in schedule, '{curr_start}' is before '{CONF_END}{i - 1}'"
             )
 
         previous_to = schedule[curr_end]

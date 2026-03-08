@@ -7,10 +7,10 @@ from datetime import timedelta
 import logging
 from typing import Any
 
-from bleak import BleakError
+from bleak.exc import BleakError
 from eurotronic_cometblue_ha import AsyncCometBlue, InvalidByteValueError
 
-from homeassistant.components import bluetooth
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import (
     ConfigEntryNotReady,
@@ -18,16 +18,14 @@ from homeassistant.exceptions import (
     ServiceValidationError,
 )
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-    UpdateFailed,
-)
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import CONF_ALL_TEMPERATURES, DEFAULT_RETRY_COUNT
 
 SCAN_INTERVAL = timedelta(minutes=5)
 LOGGER = logging.getLogger(__name__)
+
+type CometBlueConfigEntry = ConfigEntry[CometBlueDataUpdateCoordinator]
 
 
 class DeviceUnavailable(HomeAssistantError):
@@ -42,6 +40,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
     def __init__(
         self,
         hass: HomeAssistant,
+        entry: ConfigEntry,
         cometblue: AsyncCometBlue,
         device_info: DeviceInfo,
         retry_count: int = DEFAULT_RETRY_COUNT,
@@ -49,6 +48,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
         """Initialize global data updater."""
         super().__init__(
             hass=hass,
+            config_entry=entry,
             logger=LOGGER,
             name=f"Comet Blue {cometblue.client.address}",
             update_interval=SCAN_INTERVAL,
@@ -74,7 +74,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                             f"Failed to connect to '{self.device.device.address}'"
                         )
                     return await getattr(self.device, function)(**payload)
-            except (InvalidByteValueError, TimeoutError, BleakError) as ex:  # noqa: PERF203
+            except (InvalidByteValueError, TimeoutError, BleakError) as ex:
                 retry_count += 1
                 if retry_count >= self.retry_count:
                     raise HomeAssistantError(
@@ -99,7 +99,7 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
         data: dict = {}
 
         retry_count = 0
-        retrieved_temperatures = {}
+        retrieved_temperatures: dict = {}
         battery: int | None = None
         holiday: dict | None = None
 
@@ -109,12 +109,12 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
             and battery is None
             and holiday is None
         ):
-            try:
-                async with self.device:
-                    if not self.device.connected:
-                        raise ConfigEntryNotReady(
-                            f"Failed to connect to '{self.device.device.address}'"
-                        )
+            async with self.device:
+                if not self.device.connected:
+                    raise ConfigEntryNotReady(
+                        f"Failed to connect to '{self.device.device.address}'"
+                    )
+                try:
                     # temperatures are required and must trigger a retry if not available
                     if not retrieved_temperatures:
                         retrieved_temperatures = (
@@ -132,19 +132,23 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
                             type(ex).__name__,
                             ex,
                         )
-            except (InvalidByteValueError, TimeoutError, BleakError) as ex:  # noqa: PERF203
-                retry_count += 1
-                if retry_count >= self.retry_count:
-                    self.failed_update_count += 1
-                    raise UpdateFailed(f"Error retrieving data: {ex}", retry_after=30) from ex
-                LOGGER.info(
-                    "Retrying after %s (%s)",
-                    type(ex).__name__,
-                    ex,
-                )
-                await asyncio.sleep(2.5)
-            except Exception as ex:
-                raise UpdateFailed(f"({type(ex).__name__}) {ex}", retry_after=30) from ex
+                except (InvalidByteValueError, TimeoutError, BleakError) as ex:
+                    retry_count += 1
+                    if retry_count >= self.retry_count:
+                        self.failed_update_count += 1
+                        raise UpdateFailed(
+                            f"Error retrieving data: {ex}", retry_after=30
+                        ) from ex
+                    LOGGER.info(
+                        "Retrying after %s (%s)",
+                        type(ex).__name__,
+                        ex,
+                    )
+                    await asyncio.sleep(2.5)
+                except Exception as ex:
+                    raise UpdateFailed(
+                        f"({type(ex).__name__}) {ex}", retry_after=30
+                    ) from ex
 
         # If one value was not retrieved correctly, keep the old value
         data = {
@@ -157,30 +161,3 @@ class CometBlueDataUpdateCoordinator(DataUpdateCoordinator[dict[str, bytes]]):
         }
         LOGGER.debug("Received data: %s", data)
         return data
-
-
-class CometBlueBluetoothEntity(CoordinatorEntity[CometBlueDataUpdateCoordinator]):
-    """Coordinator entity for CometBlue."""
-
-    coordinator: CometBlueDataUpdateCoordinator
-    _attr_has_entity_name = True
-
-    def __init__(self, coordinator: CometBlueDataUpdateCoordinator) -> None:
-        """Initialize coordinator entity."""
-        super().__init__(coordinator)
-        self._attr_device_info = coordinator.device_info
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available."""
-        return (
-            self.coordinator.failed_update_count < self.coordinator.retry_count
-            and bluetooth.async_address_present(
-                self.hass, self.coordinator.address, True
-            )
-        )
-
-    async def async_added_to_hass(self) -> None:
-        """When entity is added to hass."""
-        await super().async_added_to_hass()
-        self._handle_coordinator_update()

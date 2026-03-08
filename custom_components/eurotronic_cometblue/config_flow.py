@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import Any
 
 from eurotronic_cometblue_ha.const import SERVICE
@@ -16,12 +15,10 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
 )
 from homeassistant.const import CONF_ADDRESS, CONF_PIN, CONF_TIMEOUT
-from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import NumberSelector, NumberSelectorConfig
 
 from .const import (
-    CONF_DEVICE_NAME,
     CONF_RETRY_COUNT,
     DEFAULT_RETRY_COUNT,
     DEFAULT_TIMEOUT_SECONDS,
@@ -33,7 +30,6 @@ DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_PIN): vol.All(
             vol.Coerce(int), vol.Range(min=0, max=99999999)
         ),
-        vol.Optional(CONF_DEVICE_NAME): str,
         vol.Optional(CONF_TIMEOUT): NumberSelector(
             NumberSelectorConfig(min=10, max=60, step=5)
         ),
@@ -58,7 +54,7 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    _existing_entry_data: Mapping[str, Any] | None = None
+    _existing_entry_data: dict[str, Any] = {}
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -69,16 +65,14 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
     def _create_entry(
         self,
         pin: int,
-        device_name: str | None = None,
         timeout: int = DEFAULT_TIMEOUT_SECONDS,
         retry_count: int = DEFAULT_RETRY_COUNT,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Create an entry for a discovered device."""
 
         entry_data = {
-            CONF_ADDRESS: None,
+            CONF_ADDRESS: "",
             CONF_PIN: pin,
-            CONF_DEVICE_NAME: device_name,
             CONF_TIMEOUT: timeout,
             CONF_RETRY_COUNT: retry_count,
         }
@@ -94,35 +88,30 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
             raise ValueError("Discovery info not set")
         entry_data[CONF_ADDRESS] = self._discovery_info.address
 
-        return self.async_create_entry(title=device_name, data=entry_data)
+        return self.async_create_entry(
+            title=name_from_discovery(self._discovery_info), data=entry_data
+        )
 
     async def async_step_bluetooth_confirm(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle user-confirmation of discovered device."""
 
         if user_input is not None:
             return self._create_entry(
                 user_input[CONF_PIN],
-                user_input.get(CONF_DEVICE_NAME),
-                timeout=user_input.get(CONF_TIMEOUT),
-                retry_count=user_input.get(CONF_RETRY_COUNT),
+                timeout=user_input.get(CONF_TIMEOUT, DEFAULT_TIMEOUT_SECONDS),
+                retry_count=user_input.get(CONF_RETRY_COUNT, DEFAULT_RETRY_COUNT),
             )
-
-        try:
-            device_name = name_from_discovery(self._discovery_info)
-        except ValueError:
-            device_name = None
 
         schema = self.add_suggested_values_to_schema(
             DATA_SCHEMA,
             {
                 CONF_PIN: 0,
-                CONF_DEVICE_NAME: device_name,
                 CONF_TIMEOUT: DEFAULT_TIMEOUT_SECONDS,
                 CONF_RETRY_COUNT: DEFAULT_RETRY_COUNT,
             }
-            | (self._existing_entry_data or {}),
+            | self._existing_entry_data,
         )
 
         return self.async_show_form(
@@ -132,7 +121,7 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle a flow initialized by Bluetooth discovery."""
         self._discovery_info = discovery_info
         self._discovery_info.address = discovery_info.address
@@ -149,7 +138,7 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_pick_device(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle the step to pick discovered device."""
 
         if user_input is not None:
@@ -189,7 +178,7 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle a flow initialized by the user."""
 
         return await self.async_step_pick_device()
@@ -198,5 +187,5 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle a reconfiguration flow initialized by the user."""
-        self._existing_entry_data = self._get_reconfigure_entry().data
+        self._existing_entry_data = dict(self._get_reconfigure_entry().data)
         return await self.async_step_bluetooth_confirm()

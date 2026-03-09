@@ -43,7 +43,7 @@ DATA_SCHEMA = vol.Schema(
 def name_from_discovery(discovery: BluetoothServiceInfoBleak | None) -> str:
     """Get the name from a discovery."""
     if discovery is None:
-        raise ValueError("Discovery info not set")
+        return "Comet Blue"
     if discovery.name == str(discovery.address):
         return discovery.address
     return f"{discovery.name} {discovery.address}"
@@ -59,8 +59,7 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         """Initialize the config flow."""
         self._discovery_info: BluetoothServiceInfoBleak | None = None
-        self._discovered_device: str | None = None
-        self._discovered_devices: list[str] = []
+        self._discovered_addresses: list[str] = []
 
     def _create_entry(
         self,
@@ -71,7 +70,9 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
         """Create an entry for a discovered device."""
 
         entry_data = {
-            CONF_ADDRESS: "",
+            CONF_ADDRESS: self._discovery_info.address
+            if self._discovery_info
+            else None,
             CONF_PIN: pin,
             CONF_TIMEOUT: timeout,
             CONF_RETRY_COUNT: retry_count,
@@ -83,10 +84,6 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._get_reconfigure_entry(),
                 data=entry_data,
             )
-
-        if self._discovery_info is None or self._discovery_info.address is None:
-            raise ValueError("Discovery info not set")
-        entry_data[CONF_ADDRESS] = self._discovery_info.address
 
         return self.async_create_entry(
             title=name_from_discovery(self._discovery_info), data=entry_data
@@ -117,19 +114,21 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="bluetooth_confirm",
             data_schema=schema,
+            description_placeholders={
+                "name": name_from_discovery(self._discovery_info)
+            },
         )
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
     ) -> ConfigFlowResult:
         """Handle a flow initialized by Bluetooth discovery."""
-        self._discovery_info = discovery_info
-        self._discovery_info.address = discovery_info.address
+        address = discovery_info.address
 
-        await self.async_set_unique_id(format_mac(discovery_info.address))
-        self._abort_if_unique_id_configured(
-            updates={CONF_ADDRESS: discovery_info.address}
-        )
+        await self.async_set_unique_id(format_mac(address))
+        self._abort_if_unique_id_configured(updates={CONF_ADDRESS: address})
+
+        self._discovery_info = discovery_info
 
         self.context["title_placeholders"] = {
             "name": name_from_discovery(self._discovery_info)
@@ -141,29 +140,35 @@ class CometBlueConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle the step to pick discovered device."""
 
+        discovered_devices = [
+            d
+            for d in async_discovered_service_info(self.hass, connectable=True)
+            if SERVICE in d.service_uuids
+        ]
+
         if user_input is not None:
             address = user_input[CONF_ADDRESS]
 
-            await self.async_set_unique_id(address, raise_on_progress=False)
+            await self.async_set_unique_id(format_mac(address))
             self._abort_if_unique_id_configured()
 
-            return self._create_entry(address)
+            self._discovery_info = next(
+                (d for d in discovered_devices if d.address == address), None
+            )
+            return await self.async_step_bluetooth_confirm()
 
         current_addresses = self._async_current_ids()
-        for discovery_info in async_discovered_service_info(
-            self.hass, connectable=True
-        ):
-            if SERVICE in discovery_info.service_uuids:
-                address = discovery_info.address
-                if (
-                    address not in current_addresses
-                    and address not in self._discovered_devices
-                ):
-                    self._discovered_devices.append(address)
+        for discovery_info in discovered_devices:
+            address = discovery_info.address
+            if (
+                address not in current_addresses
+                and address not in self._discovered_addresses
+            ):
+                self._discovered_addresses.append(address)
 
         addresses = {
             address
-            for address in self._discovered_devices
+            for address in self._discovered_addresses
             if address not in current_addresses
         }
 

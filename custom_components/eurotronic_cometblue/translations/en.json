@@ -5,11 +5,16 @@
             "no_devices_found": "No Comet Blue Bluetooth TRVs discovered.",
             "reconfigure_successful": "Reconfiguration was successful"
         },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_pin": "Invalid device PIN",
+            "timeout_connect": "Timeout establishing connection"
+        },
         "flow_title": "{name}",
         "step": {
             "bluetooth_confirm": {
                 "data": {
-                    "pin": "Device PIN (without leading zeros)",
+                    "pin": "Device PIN",
                     "retry_count": "Number of retries",
                     "timeout": "Connection timeout in seconds"
                 },
@@ -21,6 +26,22 @@
                     "address": "Discovered Comet Blue devices"
                 },
                 "title": "Comet Blue TRV"
+            }
+        }
+    },
+    "entity": {
+        "number": {
+            "offset": {
+                "name": "Temperature Offset"
+            },
+            "target_temp_high": {
+                "name": "Target Temperature High"
+            },
+            "target_temp_low": {
+                "name": "Target Temperature Low"
+            },
+            "window_open_minutes": {
+                "name": "Window Open Minutes"
             }
         }
     },

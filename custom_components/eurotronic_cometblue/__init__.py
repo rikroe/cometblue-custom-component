@@ -8,7 +8,7 @@ import logging
 from bleak.exc import BleakError
 from eurotronic_cometblue_ha import AsyncCometBlue
 
-from homeassistant.components import bluetooth
+from homeassistant.components.bluetooth import async_ble_device_from_address
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS, CONF_PIN, Platform
 from homeassistant.core import (
@@ -18,13 +18,17 @@ from homeassistant.core import (
     SupportsResponse,
     callback,
 )
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import config_validation as cv, service
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
+from homeassistant.helpers import (
+    config_validation as cv,
+    device_registry as dr,
+    entity_registry as er,
+    service,
+)
 from homeassistant.helpers.typing import ConfigType
 
 from .const import CONF_ALL_DAYS, DOMAIN
-from .coordinator import CometBlueDataUpdateCoordinator
+from .coordinator import CometBlueConfigEntry, CometBlueDataUpdateCoordinator
 from .entity import CometBlueBluetoothEntity
 from .utils import (
     SERVICE_DATETIME_SCHEMA,
@@ -39,8 +43,6 @@ PLATFORMS: list[Platform] = [
     Platform.SENSOR,
 ]
 LOGGER = logging.getLogger(__name__)
-
-type CometBlueConfigEntry = ConfigEntry[CometBlueDataUpdateCoordinator]
 
 
 @callback
@@ -103,10 +105,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: CometBlueConfigEntry) ->
 
     await _async_migrate_entries(hass, entry)
 
-
     address = entry.data[CONF_ADDRESS]
 
-    ble_device = bluetooth.async_ble_device_from_address(hass, entry.data[CONF_ADDRESS])
+    ble_device = async_ble_device_from_address(hass, entry.data[CONF_ADDRESS])
 
     if not ble_device:
         raise ConfigEntryNotReady(
@@ -120,23 +121,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: CometBlueConfigEntry) ->
     try:
         async with cometblue_device:
             ble_device_info = await cometblue_device.get_device_info_async()
-            device_info = DeviceInfo(
-                identifiers={(DOMAIN, address)},
-                name=f"{ble_device_info['model']} {cometblue_device.device.address}",
-                sw_version=ble_device_info["version"],
-                manufacturer=ble_device_info["manufacturer"],
-                model=ble_device_info["model"],
-            )
+            try:
+                # Device only returns battery level if PIN is correct
+                await cometblue_device.get_battery_async()
+            except TimeoutError as ex:
+                # This likely means PIN was incorrect on Linux and ESPHome backends
+                raise ConfigEntryError(
+                    "Failed to read battery level, likely due to incorrect PIN"
+                ) from ex
     except BleakError as ex:
         raise ConfigEntryNotReady(
             f"Failed to get device info from '{cometblue_device.device.address}'"
         ) from ex
 
+    device_registry = dr.async_get(hass)
+    device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, address)},
+        name=f"{ble_device_info['model']} {cometblue_device.device.address}",
+        manufacturer=ble_device_info["manufacturer"],
+        model=ble_device_info["model"],
+        sw_version=ble_device_info["version"],
+    )
+
     coordinator = CometBlueDataUpdateCoordinator(
         hass,
         entry,
         cometblue_device,
-        device_info,
     )
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
@@ -155,9 +166,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         """Service call to update the datetime on the device."""
         target_datetime = service_call.data.get("datetime") or datetime.now()
         await entity.coordinator.send_command(
-            "set_datetime_async",
+            entity.coordinator.device.set_datetime_async,
             {"date": target_datetime},
-            service_call.service,
         )
 
     async def get_schedule(
@@ -165,9 +175,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     ) -> ServiceResponse:
         """Service call to retrieve the schedule from the device."""
         return await entity.coordinator.send_command(
-            "get_multiple_async",
+            entity.coordinator.device.get_multiple_async,
             {"values": ["weekdays"]},
-            service_call.service,
         )
 
     async def set_schedule(
@@ -191,9 +200,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             if sched is not None and day in CONF_ALL_DAYS
         }
         await entity.coordinator.send_command(
-            "set_weekdays_async",
+            entity.coordinator.device.set_weekdays_async,
             {"values": values},
-            service_call.service,
         )
 
     async def set_holiday(
@@ -217,7 +225,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             entity.coordinator.device.device.address,
         )
         await entity.coordinator.send_command(
-            "set_holiday_async",
+            entity.coordinator.device.set_holiday_async,
             {
                 "number": 1,
                 "values": {
@@ -226,7 +234,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                     "temperature": service_call.data["temperature"],
                 },
             },
-            service_call.service,
         )
 
     service.async_register_platform_entity_service(
@@ -271,8 +278,4 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        coordinator: CometBlueDataUpdateCoordinator = entry.runtime_data
-        await coordinator.async_shutdown()
-
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

@@ -129,20 +129,21 @@ class CometBlueNumberEntity(CometBlueBluetoothEntity, NumberEntity):
     @property
     def native_value(self) -> float | None:
         """Return the entity value to represent the entity state."""
-        return self.coordinator.data.get(self.entity_description.cometblue_key)
+        return self.coordinator.data.temperatures.get(
+            self.entity_description.cometblue_key
+        )
 
     async def async_set_native_value(self, value: float) -> None:
         """Update to the device."""
 
         await self.coordinator.send_command(
-            "set_temperature_async",
+            self.coordinator.device.set_temperature_async,
             {
                 "values": {
                     # manual temperature always needs to be set, otherwise TRV will turn OFF
-                    "manualTemp": self.coordinator.data["manualTemp"],
+                    "manualTemp": self.coordinator.data.temperatures["manualTemp"],
                     self.entity_description.cometblue_key: value,
                 }
             },
-            self.entity_id,
         )
         await self.coordinator.async_request_refresh()

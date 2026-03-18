@@ -55,8 +55,9 @@ class CometBlueSensorEntity(CometBlueBluetoothEntity, SensorEntity):
         self.entity_description = description
         self._attr_unique_id = f"{coordinator.address}-{description.key}"
 
-    def _handle_coordinator_update(self) -> None:
-        """Handle updated data from the coordinator."""
-        self._attr_native_value = self.coordinator.data.get(self.entity_description.key)
-
-        super()._handle_coordinator_update()
+    @property
+    def native_value(self) -> float | None:
+        """Return the entity value to represent the entity state."""
+        if self.entity_description.key == "battery":
+            return self.coordinator.data.battery
+        return None

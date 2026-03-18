@@ -1,40 +1,37 @@
-"""Update coordinator for CometBlue."""
+"""Coordinator entity base class for CometBlue."""
 
-from datetime import timedelta
 import logging
 
 from homeassistant.components import bluetooth
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import MAX_RETRIES
+from . import DOMAIN
 from .coordinator import CometBlueDataUpdateCoordinator
 
-SCAN_INTERVAL = timedelta(minutes=5)
 LOGGER = logging.getLogger(__name__)
 
 
 class CometBlueBluetoothEntity(CoordinatorEntity[CometBlueDataUpdateCoordinator]):
     """Coordinator entity for CometBlue."""
 
-    coordinator: CometBlueDataUpdateCoordinator
     _attr_has_entity_name = True
 
     def __init__(self, coordinator: CometBlueDataUpdateCoordinator) -> None:
         """Initialize coordinator entity."""
         super().__init__(coordinator)
-        self._attr_device_info = coordinator.device_info
+        # Full DeviceInfo is added to DeviceRegistry in __init__.py, so we only
+        # set identifiers here to link the entity to the device
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self.coordinator.address)},
+        )
 
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        return (
-            self.coordinator.failed_update_count < MAX_RETRIES
-            and bluetooth.async_address_present(
-                self.hass, self.coordinator.address, True
-            )
+        # As long the device is currently connectable via Bluetooth it is available, even if the last update failed.
+        # This is because Bluetooth connectivity can be intermittent and a failed update doesn't necessarily mean the device is unavailable.
+        # The BluetoothManager will check every 300s (same interval as DataUpdateCoordinator) if the device is still present and connectable.
+        return bluetooth.async_address_present(
+            self.hass, address=self.coordinator.address, connectable=True
         )
-
-    async def async_added_to_hass(self) -> None:
-        """When entity is added to hass."""
-        await super().async_added_to_hass()
-        self._handle_coordinator_update()

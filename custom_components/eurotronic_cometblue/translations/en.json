@@ -8,7 +8,8 @@
         "error": {
             "cannot_connect": "Failed to connect",
             "invalid_pin": "Invalid device PIN",
-            "timeout_connect": "Timeout establishing connection"
+            "timeout_connect": "Timeout while establishing a connection",
+            "unknown": "Unexpected error"
         },
         "step": {
             "bluetooth_confirm": {
@@ -30,18 +31,20 @@
         }
     },
     "entity": {
+        "button": {
+            "sync_time": {
+                "name": "Sync time"
+            }
+        },
         "number": {
+            "comfort_setpoint": {
+                "name": "Comfort setpoint"
+            },
+            "eco_setpoint": {
+                "name": "Eco setpoint"
+            },
             "offset": {
-                "name": "Temperature Offset"
-            },
-            "target_temp_high": {
-                "name": "Target Temperature High"
-            },
-            "target_temp_low": {
-                "name": "Target Temperature Low"
-            },
-            "window_open_minutes": {
-                "name": "Window Open Minutes"
+                "name": "Setpoint offset"
             }
         }
     },
@@ -49,16 +52,6 @@
         "get_schedule": {
             "description": "Get schedule from device.",
             "name": "Get schedule"
-        },
-        "set_datetime": {
-            "description": "Set datetime on device.",
-            "fields": {
-                "datetime": {
-                    "description": "(Optional) A specific datetime. Defaults to current local datetime.",
-                    "name": "Datetime"
-                }
-            },
-            "name": "Set datetime"
         },
         "set_holiday": {
             "description": "Set holiday/away mode on device.",

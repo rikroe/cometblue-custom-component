@@ -1,10 +1,7 @@
 """Comet Blue number integration."""
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from dataclasses import dataclass
-import logging
 from typing import Any
 
 from eurotronic_cometblue_ha import AsyncCometBlue
@@ -14,33 +11,23 @@ from homeassistant.components.number import (
     NumberEntity,
     NumberEntityDescription,
 )
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PRECISION_HALVES, UnitOfTemperature, UnitOfTime
+from homeassistant.const import PRECISION_HALVES, EntityCategory, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .climate import MAX_TEMP, MIN_TEMP
-from .coordinator import CometBlueDataUpdateCoordinator
+from .coordinator import CometBlueConfigEntry, CometBlueDataUpdateCoordinator
 from .entity import CometBlueBluetoothEntity
-
-LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 1
 
 
 @dataclass(frozen=True, kw_only=True)
-class CometBlueRequiredKeysMixin:
-    """Mixin for required keys."""
+class CometBlueNumberEntityDescription(NumberEntityDescription):
+    """Describes a Comet Blue number entity."""
 
     cometblue_key: str
     set_fn: Callable[[AsyncCometBlue], Any]
-
-
-@dataclass(frozen=True, kw_only=True)
-class CometBlueNumberEntityDescription(
-    NumberEntityDescription, CometBlueRequiredKeysMixin
-):
-    """Describes a Comet Blue number entity."""
 
 
 DESCRIPTIONS = [
@@ -49,6 +36,7 @@ DESCRIPTIONS = [
         cometblue_key="tempOffset",
         translation_key="offset",
         device_class=NumberDeviceClass.TEMPERATURE,
+        entity_category=EntityCategory.CONFIG,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         set_fn=lambda x: x.set_temperature_async,
         native_min_value=-5.0,
@@ -57,10 +45,11 @@ DESCRIPTIONS = [
         entity_registry_enabled_default=False,
     ),
     CometBlueNumberEntityDescription(
-        key="target_temp_low",
+        key="eco_setpoint",
         cometblue_key="targetTempLow",
-        translation_key="target_temp_low",
+        translation_key="eco_setpoint",
         device_class=NumberDeviceClass.TEMPERATURE,
+        entity_category=EntityCategory.CONFIG,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         set_fn=lambda x: x.set_temperature_async,
         native_min_value=MIN_TEMP,
@@ -69,40 +58,29 @@ DESCRIPTIONS = [
         entity_registry_enabled_default=True,
     ),
     CometBlueNumberEntityDescription(
-        key="target_temp_high",
+        key="comfort_setpoint",
         cometblue_key="targetTempHigh",
-        translation_key="target_temp_high",
-        device_class=NumberDeviceClass.TEMPERATURE,
+        translation_key="comfort_setpoint",
+        device_class=NumberDeviceClass.TEMPERATURE_DELTA,
+        entity_category=EntityCategory.CONFIG,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         set_fn=lambda x: x.set_temperature_async,
         native_min_value=MIN_TEMP,
         native_max_value=MAX_TEMP,
         native_step=PRECISION_HALVES,
         entity_registry_enabled_default=True,
-    ),
-    CometBlueNumberEntityDescription(
-        key="window_open_minutes",
-        cometblue_key="windowOpenMinutes",
-        translation_key="window_open_minutes",
-        device_class=NumberDeviceClass.DURATION,
-        native_unit_of_measurement=UnitOfTime.MINUTES,
-        set_fn=lambda x: x.set_temperature_async,
-        native_min_value=5.0,
-        native_max_value=15.0,
-        native_step=5.0,
-        entity_registry_enabled_default=False,
     ),
 ]
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: CometBlueConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up Comet Blue Bluetooth number based on a config entry."""
-    coordinator: CometBlueDataUpdateCoordinator = entry.runtime_data
+    """Set up the client entities."""
 
+    coordinator = entry.runtime_data
     entities: list[CometBlueNumberEntity] = [
         CometBlueNumberEntity(coordinator, description) for description in DESCRIPTIONS
     ]
@@ -137,7 +115,7 @@ class CometBlueNumberEntity(CometBlueBluetoothEntity, NumberEntity):
         """Update to the device."""
 
         await self.coordinator.send_command(
-            self.coordinator.device.set_temperature_async,
+            self.entity_description.set_fn(self.coordinator.device),
             {
                 "values": {
                     # manual temperature always needs to be set, otherwise TRV will turn OFF

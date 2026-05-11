@@ -30,14 +30,11 @@ from homeassistant.helpers.typing import ConfigType
 from .const import CONF_ALL_DAYS, DOMAIN
 from .coordinator import CometBlueConfigEntry, CometBlueDataUpdateCoordinator
 from .entity import CometBlueBluetoothEntity
-from .utils import (
-    SERVICE_DATETIME_SCHEMA,
-    SERVICE_HOLIDAY_SCHEMA,
-    SERVICE_SCHEDULE_SCHEMA,
-)
+from .utils import SERVICE_HOLIDAY_SCHEMA, SERVICE_SCHEDULE_SCHEMA
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 PLATFORMS: list[Platform] = [
+    Platform.BUTTON,
     Platform.CLIMATE,
     Platform.NUMBER,
     Platform.SENSOR,
@@ -71,27 +68,33 @@ async def _async_migrate_entries(
 
     @callback
     def update_unique_id(entry: er.RegistryEntry) -> dict[str, str] | None:
+        new_unique_id = None
         if entry.domain == "climate" and entry.unique_id.endswith("-climate"):
             new_unique_id = entry.unique_id.replace("-climate", "")
+        elif entry.domain == "number" and entry.unique_id.endswith("-target_temp_low"):
+            new_unique_id = entry.unique_id.replace("-target_temp_low", "-eco_setpoint")
+        elif entry.domain == "number" and entry.unique_id.endswith("-target_temp_high"):
+            new_unique_id = entry.unique_id.replace("-target_temp_high", "-comfort_setpoint")
+        else:
+            return None
+        LOGGER.debug(
+            "Migrating entity '%s' unique_id from '%s' to '%s'",
+            entry.entity_id,
+            entry.unique_id,
+            new_unique_id,
+        )
+        if existing_entity_id := entity_registry.async_get_entity_id(
+            entry.domain, entry.platform, new_unique_id
+        ):
             LOGGER.debug(
-                "Migrating entity '%s' unique_id from '%s' to '%s'",
-                entry.entity_id,
-                entry.unique_id,
+                "Cannot migrate to unique_id '%s', already exists for '%s'",
                 new_unique_id,
+                existing_entity_id,
             )
-            if existing_entity_id := entity_registry.async_get_entity_id(
-                entry.domain, entry.platform, new_unique_id
-            ):
-                LOGGER.debug(
-                    "Cannot migrate to unique_id '%s', already exists for '%s'",
-                    new_unique_id,
-                    existing_entity_id,
-                )
-                return None
-            return {
-                "new_unique_id": new_unique_id,
-            }
-        return None
+            return None
+        return {
+            "new_unique_id": new_unique_id,
+        }
 
     await er.async_migrate_entries(hass, config_entry.entry_id, update_unique_id)
 
@@ -160,16 +163,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: CometBlueConfigEntry) ->
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Eurotronic Comet Blue entity services."""
 
-    async def set_datetime(
-        entity: CometBlueBluetoothEntity, service_call: ServiceCall
-    ) -> None:
-        """Service call to update the datetime on the device."""
-        target_datetime = service_call.data.get("datetime") or datetime.now()
-        await entity.coordinator.send_command(
-            entity.coordinator.device.set_datetime_async,
-            {"date": target_datetime},
-        )
-
     async def get_schedule(
         entity: CometBlueBluetoothEntity, service_call: ServiceCall
     ) -> ServiceResponse:
@@ -236,15 +229,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             },
         )
 
-    service.async_register_platform_entity_service(
-        hass,
-        DOMAIN,
-        "set_datetime",
-        entity_domain="climate",
-        schema=cv.make_entity_service_schema(SERVICE_DATETIME_SCHEMA),
-        supports_response=SupportsResponse.NONE,
-        func=set_datetime,
-    )
     service.async_register_platform_entity_service(
         hass,
         DOMAIN,

@@ -6,8 +6,6 @@ DOMAIN: Final = "eurotronic_cometblue"
 
 CONF_DATETIME: Final = "datetime"
 CONF_SCHEDULE: Final = "schedule"
-CONF_RETRY_COUNT: Final = "retry_count"
-
 
 CONF_MONDAY: Final = "monday"
 CONF_TUESDAY: Final = "tuesday"

@@ -1,13 +1,3 @@
-set_datetime:
-  target:
-    entity:
-      domain: climate
-      integration: eurotronic_cometblue
-  fields:
-    datetime:
-      selector:
-        datetime:
-
 get_schedule:
   target:
     entity:

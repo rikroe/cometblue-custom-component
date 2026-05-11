@@ -1,26 +1,25 @@
 {
   "entity": {
+    "button": {
+      "sync_time": {
+        "default": "mdi:calendar-clock"
+      }
+    },
     "number": {
-      "target_temperature_high": {
+      "comfort_setpoint": {
         "default": "mdi:thermometer-chevron-up"
       },
-      "target_temperature_low": {
+      "eco_setpoint": {
         "default": "mdi:thermometer-chevron-down"
       },
-      "temperature_offset": {
+      "offset": {
         "default": "mdi:thermometer-check"
-      },
-      "window_open_minutes": {
-        "default": "mdi:timer-sand"
       }
     }
   },
   "services": {
     "get_schedule": {
       "service": "mdi:calendar-search"
-    },
-    "set_datetime": {
-      "service": "mdi:calendar-clock"
     },
     "set_holiday": {
       "service": "mdi:beach"

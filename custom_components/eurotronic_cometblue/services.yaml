@@ -12,83 +12,181 @@ set_schedule:
   fields:
     monday:
       example: |
-        start1: 07:00:00
-        end1: 09:00:00
-        start2: 10:00:00
-        end2: 12:00:00
-        start3: 13:00:00
-        end3: 17:00:00
-        start4: 20:00:00
-        end4: 23:00:00
+        - from: 07:00:00
+          to: 09:00:00
+        - from: 10:00:00
+          to: 12:00:00
+        - from: 13:00:00
+          to: 17:00:00
+        - from: 20:00:00
+          to: 23:00:00
       required: false
       selector:
         object:
+          label_field: From
+          description_field: To
+          multiple: true
+          fields:
+            from:
+              label: From
+              required: false
+              selector:
+                time:
+            to:
+              label: To
+              required: false
+              selector:
+                time:
     tuesday:
       example: |
-        start1: 07:00:00
-        end1: 09:00:00
-        start2: 10:00:00
-        end2: 12:00:00
-        start3: 13:00:00
-        end3: 17:00:00
-        start4: 20:00:00
-        end4: 23:00:00
+        - from: 07:00:00
+          to: 09:00:00
+        - from: 10:00:00
+          to: 12:00:00
+        - from: 13:00:00
+          to: 17:00:00
+        - from: 20:00:00
+          to: 23:00:00
       required: false
       selector:
         object:
+          label_field: From
+          description_field: To
+          multiple: true
+          fields:
+            from:
+              label: From
+              required: false
+              selector:
+                time:
+            to:
+              label: To
+              required: false
+              selector:
+                time:
     wednesday:
       example: |
-        start1: 07:00:00
-        end1: 09:00:00
-        start2: 10:00:00
-        end2: 12:00:00
-        start3: 13:00:00
-        end3: 17:00:00
-        start4: 20:00:00
-        end4: 23:00:00
+        - from: 07:00:00
+          to: 09:00:00
+        - from: 10:00:00
+          to: 12:00:00
+        - from: 13:00:00
+          to: 17:00:00
+        - from: 20:00:00
+          to: 23:00:00
       required: false
       selector:
         object:
+          label_field: From
+          description_field: To
+          multiple: true
+          fields:
+            from:
+              label: From
+              required: false
+              selector:
+                time:
+            to:
+              label: To
+              required: false
+              selector:
+                time:
     thursday:
       example: |
-        start1: 07:00:00
-        end1: 09:00:00
-        start2: 10:00:00
-        end2: 12:00:00
-        start3: 13:00:00
-        end3: 17:00:00
-        start4: 20:00:00
-        end4: 23:00:00
+        - from: 07:00:00
+          to: 09:00:00
+        - from: 10:00:00
+          to: 12:00:00
+        - from: 13:00:00
+          to: 17:00:00
+        - from: 20:00:00
+          to: 23:00:00
       required: false
       selector:
         object:
+          label_field: From
+          description_field: To
+          multiple: true
+          fields:
+            from:
+              label: From
+              required: false
+              selector:
+                time:
+            to:
+              label: To
+              required: false
+              selector:
+                time:
     friday:
-      example: "{}"
+      example: []
       required: false
       selector:
         object:
+          label_field: From
+          description_field: To
+          multiple: true
+          fields:
+            from:
+              label: From
+              required: false
+              selector:
+                time:
+            to:
+              label: To
+              required: false
+              selector:
+                time:
     saturday:
       example: |
-        start1: 09:00:00
-        end1: 12:00:00
-        start2: 17:00:00
-        end2: 19:00:00
+        - from: 09:00:00
+          to: 12:00:00
+        - from: 17:00:00
+          to: 19:00:00
       required: false
       selector:
         object:
+          label_field: From
+          description_field: To
+          multiple: true
+          fields:
+            from:
+              label: From
+              required: false
+              selector:
+                time:
+            to:
+              label: To
+              required: false
+              selector:
+                time:
     sunday:
       example: |
-        start1: 07:00:00
-        end1: 09:00:00
-        start2: 10:00:00
-        end2: 12:00:00
-        start3: 13:00:00
-        end3: 17:00:00
-        start4: 20:00:00
-        end4: 23:00:00
+        - from: 07:00:00
+          to: 09:00:00
+        - from: 10:00:00
+          to: 12:00:00
+        - from: 13:00:00
+          to: 17:00:00
+        - from: 20:00:00
+          to: 23:00:00
       required: false
       selector:
         object:
+          label_field: From
+          description_field: To
+          multiple: true
+          fields:
+            from:
+              label: From
+              required: false
+              selector:
+                time:
+            to:
+              label: To
+              required: false
+              selector:
+                time:
 
 set_holiday:
   target:
@@ -96,13 +194,13 @@ set_holiday:
       domain: climate
       integration: eurotronic_cometblue
   fields:
-    start:
-      example: 2023-12-24
+    from:
+      example: 2023-12-24 17:00:00
       required: true
       selector:
         datetime:
-    end:
-      example: 2023-12-31
+    to:
+      example: 2023-12-31 23:30:00
       required: true
       selector:
         datetime:

@@ -13,6 +13,7 @@ from homeassistant.helpers import (
     config_validation as cv,
     device_registry as dr,
     entity_registry as er,
+    issue_registry as ir,
 )
 from homeassistant.helpers.typing import ConfigType
 
@@ -91,6 +92,15 @@ async def _async_migrate_entries(
 
 async def async_setup_entry(hass: HomeAssistant, entry: CometBlueConfigEntry) -> bool:
     """Set up Eurotronic Comet Blue from a config entry."""
+
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        "custom_component_included",
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key="custom_component_included",
+    )
 
     _async_migrate_options_if_missing(hass, entry)
 

@@ -5,6 +5,9 @@
 
 A custom component based on [rikroe/eurotronic-cometblue](https://github.com/rikroe/eurotronic-cometblue) to support Eurotronic's CometBlue thermostats (and similar).
 
+> [!CAUTION]
+> This custom integration was included in Home Assistant 2026.5. Please delete the custom component files from `custom_components/eurotronic_cometblue` and restart Home Assistant. Your configuration will be preserved.
+
 We support the same devices as our upstream library:
 
 - Eurotronic Comet Blue

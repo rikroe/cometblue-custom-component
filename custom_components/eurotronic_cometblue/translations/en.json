@@ -48,6 +48,12 @@
             }
         }
     },
+    "issues": {
+        "custom_component_included": {
+            "description": "This custom integration was included in Home Assistant 2026.5. Please delete the custom component files from `custom_components/eurotronic_cometblue` and restart Home Assistant. Your configuration will be preserved.",
+            "title": "Remove the Comet Blue custom component"
+        }
+    },
     "services": {
         "get_schedule": {
             "description": "Retrieves the configured heating time ranges of one or multiple devices.",
